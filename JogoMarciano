@@ -1,1 +1,73 @@
+int arvoreMarciano;
+int tentativas;
+int limiteTentativas = 10;
+String mensagem;
+String input = "";
+int melhorTentativa = Integer.MAX_VALUE;
+boolean jogoAtivo = true;
 
+void setup() {
+    size(500, 500);
+    iniciarJogo();
+}
+
+void draw() {
+    background(157);
+    textAlign(CENTER, CENTER);
+    textSize(20);
+    fill(0);
+    text("Jogo do Marciano", width / 2, 50);
+    text("Digite um número entre 1 e 100", width / 2, 100);
+    text("Pressione Enter após digitar", width / 2, 130);
+    text("Número digitado: " + input, width / 2, 170);
+    text(mensagem, width / 2, 220);
+    
+    if (!jogoAtivo) {
+        text("Pressione 'R' para jogar novamente", width / 2, 270);
+        text("Melhor tentativa: " + (melhorTentativa == Integer.MAX_VALUE ? "-" : melhorTentativa), width / 2, 300);
+    }
+}
+
+void keyPressed() {
+    if (!jogoAtivo && (key == 'r' || key == 'R')) {
+        iniciarJogo();
+        return;
+    }
+    
+    if (key == ENTER || key == RETURN) {
+        if (input.length() > 0 && jogoAtivo) {
+            int tentativa = int(trim(input));
+            tentativas++;
+            
+            if (tentativa == arvoreMarciano) {
+                mensagem = "Parabéns! Você encontrou o Marciano!\nTotal de tentativas: " + tentativas;
+                jogoAtivo = false;
+                if (tentativas < melhorTentativa) {
+                    melhorTentativa = tentativas;
+                }
+            } else if (tentativa < arvoreMarciano) {
+                mensagem = "O Marciano está em uma árvore de número maior.";
+            } else {
+                mensagem = "O Marciano está em uma árvore de número menor.";
+            }
+            
+            if (tentativas >= limiteTentativas && jogoAtivo) {
+                mensagem = "Você atingiu o limite de tentativas! O Marciano estava na árvore " + arvoreMarciano;
+                jogoAtivo = false;
+            }
+            input = "";
+        }
+    } else if (key >= '0' && key <= '9' && jogoAtivo) {
+        input += key;
+    } else if (key == BACKSPACE && input.length() > 0 && jogoAtivo) {
+        input = input.substring(0, input.length() - 1);
+    }
+}
+
+void iniciarJogo() {
+    arvoreMarciano = int(random(1, 101));
+    tentativas = 0;
+    mensagem = "Adivinhe a árvore do Marciano! Você tem " + limiteTentativas + " tentativas.";
+    input = "";
+    jogoAtivo = true;
+}
