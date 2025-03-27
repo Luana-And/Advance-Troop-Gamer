@@ -4,11 +4,11 @@ int limiteTentativas = 10;
 String mensagem;
 String input = "";
 int melhorTentativa = Integer.MAX_VALUE;
-boolean jogoAtivo = true;
+boolean jogoAtivo = false;
+boolean telaInicio = true; // Indica se a tela de início está ativa
 
 void setup() {
     size(500, 500);
-    iniciarJogo();
 }
 
 void draw() {
@@ -16,19 +16,31 @@ void draw() {
     textAlign(CENTER, CENTER);
     textSize(20);
     fill(0);
-    text("Jogo do Marciano", width / 2, 50);
-    text("Digite um número entre 1 e 100", width / 2, 100);
-    text("Pressione Enter após digitar", width / 2, 130);
-    text("Número digitado: " + input, width / 2, 170);
-    text(mensagem, width / 2, 220);
     
-    if (!jogoAtivo) {
-        text("Pressione 'R' para jogar novamente", width / 2, 270);
-        text("Melhor tentativa: " + (melhorTentativa == Integer.MAX_VALUE ? "-" : melhorTentativa), width / 2, 300);
+    if (telaInicio) {
+        text("Jogo do Marciano", width / 2, 100);
+        text("Pressione ENTER para começar", width / 2, 200);
+    } else {
+        text("Jogo do Marciano", width / 2, 50);
+        text("Digite um número entre 1 e 100", width / 2, 100);
+        text("Pressione Enter após digitar", width / 2, 130);
+        text("Número digitado: " + input, width / 2, 170);
+        text(mensagem, width / 2, 220);
+        
+        if (!jogoAtivo) {
+            text("Pressione 'R' para jogar novamente", width / 2, 270);
+            text("Melhor tentativa: " + (melhorTentativa == Integer.MAX_VALUE ? "-" : melhorTentativa), width / 2, 300);
+        }
     }
 }
 
 void keyPressed() {
+    if (telaInicio && (key == ENTER || key == RETURN)) {
+        telaInicio = false;
+        iniciarJogo();
+        return;
+    }
+    
     if (!jogoAtivo && (key == 'r' || key == 'R')) {
         iniciarJogo();
         return;
