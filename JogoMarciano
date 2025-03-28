@@ -5,28 +5,31 @@ String mensagem;
 String input = "";
 int melhorTentativa = Integer.MAX_VALUE;
 boolean jogoAtivo = false;
-boolean telaInicio = true;
-boolean telaResultado = false;
+boolean telaInicio = true;  // Indica se a tela de início está ativa
+boolean telaResultado = false;  // Nova variável para controlar a tela de resultado
 
 void setup() {
-    size(600, 500);
+    size(600, 500);  // Alterado de 500x500 para 600x500 para melhor espaçamento
 }
 
 void draw() {
-    background(153, 50, 204);
+    background(153, 50, 204);  // Alterada a cor de fundo
     textAlign(CENTER, CENTER);
     textSize(20);
     fill(0);
-
-    if (telaInicio) {
+    
+    if (telaInicio) {  
+        // Tela inicial com novas posições para o texto
         text("Jogo do Marciano", width / 2, 200);
         text("Pressione ENTER para começar", width / 2, 250);
-    } else if (telaResultado) {
+    } else if (telaResultado) {  
+        // Nova tela de resultado após o fim do jogo
         text("Fim de Jogo!", width / 2, 150);
         text(mensagem, width / 2, 200);
         text("Melhor tentativa: " + (melhorTentativa == Integer.MAX_VALUE ? "-" : melhorTentativa), width / 2, 250);
         text("Pressione 'R' para jogar novamente", width / 2, 300);
-    } else {
+    } else {  
+        // Tela do jogo
         text("Digite um número entre 1 e 100", width / 2, 150);
         text("Pressione Enter após digitar", width / 2, 180);
         text("Número digitado: " + input, width / 2, 240);
@@ -35,54 +38,60 @@ void draw() {
 }
 
 void keyPressed() {
-    if (telaInicio && (key == ENTER || key == RETURN)) {
+    if (telaInicio && (key == ENTER || key == RETURN)) {  
+        // Se estiver na tela inicial, iniciar o jogo ao pressionar ENTER
         telaInicio = false;
         iniciarJogo();
         return;
     }
 
-    if (telaResultado && (key == 'r' || key == 'R')) {
+    if (telaResultado && (key == 'r' || key == 'R')) {  
+        // Se estiver na tela de resultado, pressionar 'R' reinicia o jogo
         iniciarJogo();
         return;
     }
 
-    if (key == ENTER || key == RETURN) {
-        if (input.length() > 0 && jogoAtivo) {
+    if (key == ENTER || key == RETURN) {  
+        if (input.length() > 0 && jogoAtivo) {  
             int tentativa = int(trim(input));
             tentativas++;
 
-            if (tentativa == arvoreMarciano) {
+            if (tentativa == arvoreMarciano) {  
+                // Se acertou, exibe mensagem de vitória e muda para tela de resultado
                 mensagem = "Parabéns! Você encontrou o Marciano!\nTotal de tentativas: " + tentativas;
                 jogoAtivo = false;
                 if (tentativas < melhorTentativa) {
                     melhorTentativa = tentativas;
                 }
-                telaResultado = true;
+                telaResultado = true;  // Ativa a tela de resultado
             } else if (tentativa < arvoreMarciano) {
                 mensagem = "O Marciano está em uma árvore de número maior.";
             } else {
                 mensagem = "O Marciano está em uma árvore de número menor.";
             }
 
-            if (tentativas >= limiteTentativas && jogoAtivo) {
+            if (tentativas >= limiteTentativas && jogoAtivo) {  
+                // Se atingir o limite de tentativas, finaliza o jogo
                 mensagem = "Você atingiu o limite de tentativas! O Marciano estava na árvore " + arvoreMarciano;
                 jogoAtivo = false;
-                telaResultado = true;
+                telaResultado = true;  // Ativa a tela de resultado
             }
             input = "";
         }
-    } else if (key >= '0' && key <= '9' && jogoAtivo) {
+    } else if (key >= '0' && key <= '9' && jogoAtivo) {  
+        // Permite digitar números apenas se o jogo estiver ativo
         input += key;
-    } else if (key == BACKSPACE && input.length() > 0 && jogoAtivo) {
+    } else if (key == BACKSPACE && input.length() > 0 && jogoAtivo) {  
+        // Permite apagar o último caractere digitado
         input = input.substring(0, input.length() - 1);
     }
 }
 
 void iniciarJogo() {
-    arvoreMarciano = int(random(1, 101));
+    arvoreMarciano = int(random(1, 101));  // Escolhe um número aleatório entre 1 e 100
     tentativas = 0;
     mensagem = "Adivinhe a árvore do Marciano! Você tem " + limiteTentativas + " tentativas.";
     input = "";
     jogoAtivo = true;
-    telaResultado = false;
+    telaResultado = false;  // Reset da tela de resultado ao iniciar uma nova partida
 }
