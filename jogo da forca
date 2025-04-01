@@ -1,1 +1,88 @@
+String[] palavras = {"FLAMENGO", "PALMEIRAS", "CORINTHIANS", "SAOPAULO", "SANTOS", "VASCO", "GREMIO", "INTERNACIONAL", "CRUZEIRO", "ATLÉTICOMG", "SPORT"};
+String palavraSecreta;
+boolean[] letrasCorretas;
+int erros = 0;
+String letrasTentadas = "";
+boolean jogoAtivo = true;
 
+void setup() {
+  size(600, 400);
+  palavraSecreta = palavras[int(random(palavras.length))];
+  letrasCorretas = new boolean[palavraSecreta.length()];
+  textSize(32);
+}
+
+void draw() {
+  background(255);
+  desenhaForca();
+  desenhaPalavra();
+  desenhaLetrasTentadas();
+  verificaFimDeJogo();
+}
+
+void keyPressed() {
+  if (!jogoAtivo) return;
+  char letra = Character.toUpperCase(key);
+  if (Character.isLetter(letra) && letrasTentadas.indexOf(letra) == -1) {
+    letrasTentadas += letra;
+    boolean acertou = false;
+    for (int i = 0; i < palavraSecreta.length(); i++) {
+      if (palavraSecreta.charAt(i) == letra) {
+        letrasCorretas[i] = true;
+        acertou = true;
+      }
+    }
+    if (!acertou) erros++;
+  }
+}
+
+void desenhaForca() {
+  stroke(0);
+  line(100, 300, 200, 300);
+  line(150, 300, 150, 100);
+ line(150, 100, 250, 100);
+  line(250, 100, 250, 130);
+  
+  if (erros > 0) ellipse(250, 150, 40, 40); // Cabeça
+  if (erros > 1) line(250, 170, 250, 230); // Corpo
+  if (erros > 2) line(250, 180, 230, 210); // Braço esquerdo
+  if (erros > 3) line(250, 180, 270, 210); // Braço direito
+  if (erros > 4) line(250, 230, 230, 270); // Perna esquerda
+  if (erros > 5) line(250, 230, 270, 270); // Perna direita
+}
+
+void desenhaPalavra() {
+  fill(0);
+  textAlign(CENTER);
+  String exibicao = "";
+  boolean venceu = true;
+  for (int i = 0; i < palavraSecreta.length(); i++) {
+    if (letrasCorretas[i]) {
+      exibicao += palavraSecreta.charAt(i) + " ";
+    } else {
+      exibicao += "_ ";
+      venceu = false;
+    }
+  }
+  text(exibicao, width / 2, 350);
+  if (venceu) {
+    jogoAtivo = false;
+  }
+}
+
+void desenhaLetrasTentadas() {
+  fill(150, 0, 0);
+  textSize(20);
+  text("Letras tentadas: " + letrasTentadas, width / 2, 380);
+}
+
+void verificaFimDeJogo() {
+  if (erros >= 6) {
+    fill(255, 0, 0);
+    text("Você perdeu! A palavra era " + palavraSecreta, width / 2, 50);
+    jogoAtivo = false;
+  } else if (!jogoAtivo) {
+    fill(0, 255, 0);
+    text("Parabéns! Você ganhou!", width / 2, 50);
+}
+}
