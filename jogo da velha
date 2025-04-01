@@ -1,1 +1,168 @@
+int[][] tabuleiro = new int[3][3]; // 0 = vazio, 1 = X, 2 = O
+boolean X = true;         // true = vez do jogador X, false = vez do jogador O
+boolean jogo = true;        // Controla se o jogo está ativo
+int tamanho = 500 / 3;      // Cada célula terá aproximadamente 166 pixels
+int vencedor = 0;                // 0 = sem vencedor, 1 = X venceu, 2 = O venceu
+
+void setup() {
+  size(500, 500);
+  reiniciarJogo();
+}
+
+void draw() {
+  background(200); // cinza
+  desenharTabuleiro();
+  desenharSimbolos();
+  
+  // Se o jogo terminou, mostra a mensagem
+  if (!jogo) {
+    exibirResultado();
+  }
+}
+
+// Reinicia o jogo
+void reiniciarJogo() {
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      tabuleiro[i][j] = 0;
+    }
+  }
+  X = true;
+  jogo = true;
+  vencedor = 0;
+}
+
+// Desenha a grade do jogo
+void desenharTabuleiro() {
+  stroke(0);// cor da linha
+  strokeWeight(4);//grossura da linha
+  
+  // Linhas verticais
+  line(tamanho, 0, tamanho, height);
+  line(tamanho * 2, 0, tamanho * 2, height);
+  
+  // Linhas horizontais
+  line(0, tamanho, width, tamanho);
+  line(0, tamanho * 2, width, tamanho * 2);
+}
+
+// Desenha os símbolos X e O no tabuleiro
+void desenharSimbolos() {
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      int x = j * tamanho + tamanho / 2; // Centraliza na célula
+      int y = i * tamanho + tamanho / 2;
+      
+      if (tabuleiro[i][j] == 1) {
+       fazerX(x, y);
+      } else if (tabuleiro[i][j] == 2) {
+        fazerO(x, y);
+      }
+    }
+  }
+}
+
+// Desenha o X em uma posição
+void fazerX(int x, int y) {
+  stroke(0, 128, 10);
+  strokeWeight(6);
+  int desenho = tamanho / 2 - 20;
+  line(x - desenho, y - desenho, x + desenho, y + desenho);
+  line(x + desenho, y - desenho, x - desenho, y + desenho);
+}
+
+// Desenha o O em uma posição
+void fazerO(int x, int y) {
+  stroke(0, 4, 255);
+  strokeWeight(6);
+  noFill();
+  ellipse(x, y, tamanho - 40, tamanho - 40);
+}
+
+// Ao clicar, registra a jogada e verifica o estado do jogo
+void mousePressed() {
+  // Se o jogo já terminou, reinicia com um clique
+  if (!jogo) {
+    reiniciarJogo();
+    return;
+  }
+  
+  int coluna = mouseX / tamanho;
+  int linha = mouseY / tamanho;
+  
+  // Se a célula estiver vazia, faz a jogada
+  if (tabuleiro[linha][coluna] == 0) {
+    tabuleiro[linha][coluna] = X ? 1 : 2;
+    verificarVitoria();
+    // Troca de jogador somente se não houver vencedor ainda
+    if (jogo) {
+     X = !X;
+    }
+  }
+}
+
+// Verifica todas as condições de vitória ou empate
+void verificarVitoria() {
+  // Checa linhas e colunas
+  for (int i = 0; i < 3; i++) {
+    // Linha i
+    if (tabuleiro[i][0] != 0 && tabuleiro[i][0] == tabuleiro[i][1] && tabuleiro[i][1] == tabuleiro[i][2]) {
+      vencedor = tabuleiro[i][0];
+      jogo = false;
+      return;
+    }
+    // Coluna i
+    if (tabuleiro[0][i] != 0 && tabuleiro[0][i] == tabuleiro[1][i] && tabuleiro[1][i] == tabuleiro[2][i]) {
+      vencedor = tabuleiro[0][i];
+      jogo = false;
+      return;
+    }
+  }
+  
+  // Checa diagonais
+  if (tabuleiro[0][0] != 0 && tabuleiro[0][0] == tabuleiro[1][1] && tabuleiro[1][1] == tabuleiro[2][2]) {
+    vencedor = tabuleiro[0][0];
+    jogo = false;
+    return;
+  }
+  if (tabuleiro[0][2] != 0 && tabuleiro[0][2] == tabuleiro[1][1] && tabuleiro[1][1] == tabuleiro[2][0]) {
+    vencedor = tabuleiro[0][2];
+    jogo = false;
+    return;
+  }
+  
+  // Verifica se houve empate (todas as células preenchidas sem vencedor)
+  boolean empate = true;
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      if (tabuleiro[i][j] == 0) {
+        empate = false;
+        break;
+      }
+    }
+  }
+  if (empate) {
+    jogo = false;
+  }
+}
+
+// Exibe na tela o resultado do jogo
+void exibirResultado() {
+  textAlign(CENTER, CENTER);
+  textSize(32);
+  fill(0);
+  
+  // Se houver um vencedor, mostra qual jogador venceu
+  if (vencedor == 1) {
+    text("Jogador X Venceu!", width/2, height/2);
+  } else if (vencedor == 2) {
+    text("Jogador O Venceu!", width/2, height/2);
+  } else {
+    text("Empate!", width/2, height/2);
+  }
+  
+  // Instrução para reiniciar
+  textSize(20);
+  text("Clique para reiniciar", width/2, height/2 + 40);
+}
 
