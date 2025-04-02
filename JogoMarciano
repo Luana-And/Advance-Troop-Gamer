@@ -1,107 +1,129 @@
-let arvoreMarciano;
-let tentativas;
-let limiteTentativas = 10;
-let tentativasRestantes;
-let mensagem;
-let input = "";
-let melhorTentativa = Number.MAX_VALUE;
-let jogoAtivo = false;
-let telaInicio = true;
-let telaResultado = false;
-let introducaoTexto = [
-    "Você é um explorador espacial em uma missão para encontrar o Marciano.",
-    "Ele se escondeu em uma das 100 árvores espalhadas pelo planeta.",
-    "Você tem 10 tentativas para encontrar o Marciano.",
-    "A cada erro, você receberá uma dica sobre onde ele está.",
-    "Boa sorte, explorador! O futuro da missão está em suas mãos!"
-];
-let indiceIntroducao = 0;
+import java.util.*;
 
-function setup() {
-    createCanvas(600, 500);
-    textAlign(CENTER, CENTER);
-    textSize(20);
-    iniciarJogo();
-}
+public class Jogomarciano {
+    private static int arvoreMarciano;
+    private static int tentativas;
+    private static final int LIMITE_TENTATIVAS = 10;
+    private static int tentativasRestantes;
+    private static String mensagem;
+    private static String input = "";
+    private static int melhorTentativa = Integer.MAX_VALUE;
+    private static boolean telaInicio = true;
+    private static boolean telaResultado = false;
+    private static int totalJogos = 0;
+    private static int totalVitorias = 0;
+    private static int totalDerrotas = 0;
+    private static final List<Integer> historicoTentativas = new ArrayList<>();
 
-function draw() {
-    background(153, 50, 204);
-    fill(0);
+    private static final String[] introducaoTexto = {
+            "Você é um explorador espacial em uma missão para encontrar o Marciano.",
+            "Ele se escondeu em uma das 100 árvores espalhadas pelo planeta.",
+            "Você tem 10 tentativas para encontrar o Marciano.",
+            "A cada erro, você receberá uma dica sobre onde ele está.",
+            "Boa sorte, explorador! O futuro da missão está em suas mãos!"
+    };
 
-    if (telaInicio) {
-        // Exibindo a introdução do jogo
-        text(introducaoTexto[indiceIntroducao], width / 2, 200);
-        if (frameCount % 300 == 0 && indiceIntroducao < introducaoTexto.length - 1) {
-            indiceIntroducao++; // A cada segundo, mostra a próxima parte da história
-        }
-        if (indiceIntroducao === introducaoTexto.length - 1) {
-            text("Pressione ENTER para começar", width / 2, 300);
-        }
-    } else if (telaResultado) {
-        text("Fim de Jogo!", width / 2, 150);
-        text(mensagem, width / 2, 200);
-        text("Melhor tentativa: " + (melhorTentativa === Number.MAX_VALUE ? "-" : melhorTentativa), width / 2, 250);
-        text("Pressione 'R' para jogar novamente", width / 2, 300);
-    } else {
-        text("Digite um número entre 1 e 100", width / 2, 120);
-        text("Pressione Enter após digitar", width / 2, 150);
-        text("Número digitado: " + input, width / 2, 250);
-        text("Tentativas restantes: " + tentativasRestantes, width / 2, 280);
-        text(mensagem, width / 2, 400);
-    }
-}
-
-function keyPressed() {
-    if (telaInicio && keyCode === ENTER) {
-        telaInicio = false;
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
         iniciarJogo();
-        return;
-    }
 
-    if (telaResultado && (key === 'r' || key === 'R')) {
-        iniciarJogo();
-        return;
-    }
-
-    if (keyCode === ENTER) {
-        if (input.length > 0 && jogoAtivo) {
-            let tentativa = int(input.trim());
-            tentativas++;
-            tentativasRestantes--;
-
-            if (tentativa === arvoreMarciano) {
-                mensagem = "Parabéns! Você encontrou o Marciano!\nTotal de tentativas: " + tentativas;
-                jogoAtivo = false;
-                if (tentativas < melhorTentativa) {
-                    melhorTentativa = tentativas;
+        while (true) {
+            if (telaInicio) {
+                for (String linha : introducaoTexto) {
+                    System.out.println(linha);
                 }
-                telaResultado = true;
-            } else if (tentativa < arvoreMarciano) {
-                mensagem = "O Marciano está em uma árvore de número maior.";
-            } else {
-                mensagem = "O Marciano está em uma árvore de número menor.";
+                System.out.println("Pressione ENTER para começar ou 'S' para sair");
+                String resposta = scanner.nextLine();
+                if (resposta.equalsIgnoreCase("S")) {
+                    System.out.println("Jogo encerrado. Até a próxima!");
+                    break;
+                }
+                telaInicio = false;
+                iniciarJogo();
             }
 
-            if (tentativasRestantes <= 0 && jogoAtivo) {
-                mensagem = "Você atingiu o limite de tentativas! O Marciano estava na árvore " + arvoreMarciano;
-                jogoAtivo = false;
-                telaResultado = true;
+            if (telaResultado) {
+                System.out.println("Fim de Jogo!");
+                System.out.println(mensagem);
+                System.out.println("Melhor tentativa: " + (melhorTentativa == Integer.MAX_VALUE ? "-" : melhorTentativa));
+                System.out.println("Total de jogos: " + totalJogos);
+                System.out.println("Vitórias: " + totalVitorias + " | Derrotas: " + totalDerrotas);
+                System.out.println("Pressione 'R' para jogar novamente ou 'S' para sair");
+                String resposta = scanner.nextLine();
+                if (resposta.equalsIgnoreCase("R")) {
+                    iniciarJogo();
+                } else if (resposta.equalsIgnoreCase("S")) {
+                    System.out.println("Jogo encerrado. Até a próxima!");
+                    break;
+                }
+            } else {
+                System.out.println("Digite um número entre 1 e 100 e pressione ENTER:");
+                input = scanner.nextLine().trim();
+
+                if (input.isEmpty()) {
+                    System.out.println("Entrada vazia! Digite um número entre 1 e 100.");
+                    continue;
+                }
+
+                try {
+                    int tentativa = Integer.parseInt(input);
+                    if (tentativa < 1 || tentativa > 100) {
+                        System.out.println("Número fora do intervalo. Tente novamente.");
+                        continue;
+                    }
+
+                    if (historicoTentativas.contains(tentativa)) {
+                        System.out.println("Você já tentou esse número antes! Tente outro.");
+                        continue;
+                    }
+
+                    historicoTentativas.add(tentativa);
+                    tentativas++;
+                    tentativasRestantes--;
+
+                    if (tentativa == arvoreMarciano) {
+                        mensagem = "Parabéns! Você encontrou o Marciano! Total de tentativas: " + tentativas;
+                        if (tentativas < melhorTentativa) {
+                            melhorTentativa = tentativas;
+                        }
+                        totalVitorias++;
+                        telaResultado = true;
+                    } else {
+                        if (tentativa < arvoreMarciano) {
+                            mensagem = "O Marciano está em uma árvore de número **maior**.";
+                        } else {
+                            mensagem = "O Marciano está em uma árvore de número **menor**.";
+                        }
+
+                        if (tentativasRestantes <= 0) {
+                            mensagem = "Você atingiu o limite de tentativas! O Marciano estava na árvore " + arvoreMarciano;
+                            totalDerrotas++;
+                            telaResultado = true;
+                        }
+                    }
+
+                    System.out.println("Histórico de tentativas: " + historicoTentativas);
+                    System.out.println("Tentativas restantes: " + tentativasRestantes);
+                    System.out.println(mensagem);
+                } catch (NumberFormatException e) {
+                    System.out.println("Entrada inválida. Digite um número entre 1 e 100.");
+                }
             }
-            input = "";
         }
-    } else if (key >= '0' && key <= '9' && jogoAtivo) {
-        input += key;
-    } else if (keyCode === BACKSPACE && input.length > 0 && jogoAtivo) {
-        input = input.substring(0, input.length - 1);
+
+        scanner.close();
+    }
+
+    private static void iniciarJogo() {
+        Random random = new Random();
+        arvoreMarciano = random.nextInt(100) + 1;
+        tentativas = 0;
+        tentativasRestantes = LIMITE_TENTATIVAS;
+        mensagem = "Adivinhe a árvore do Marciano! Você tem " + LIMITE_TENTATIVAS + " tentativas.";
+        input = "";
+        telaResultado = false;
+        historicoTentativas.clear();
+        totalJogos++;
     }
 }
 
-function iniciarJogo() {
-    arvoreMarciano = int(random(1, 101));
-    tentativas = 0;
-    tentativasRestantes = limiteTentativas;
-    mensagem = "Adivinhe a árvore do Marciano! Você tem " + limiteTentativas + " tentativas.";
-    input = "";
-    jogoAtivo = true;
-    telaResultado = false;
-}
