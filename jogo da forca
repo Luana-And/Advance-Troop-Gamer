@@ -1,4 +1,4 @@
-String[] palavras = {"FLAMENGO", "PALMEIRAS", "CORINTHIANS", "SAOPAULO", "SANTOS", "VASCO", "GREMIO", "INTERNACIONAL", "CRUZEIRO", "ATLÉTICOMG", "SPORT"};
+String[] palavras = {"FLAMENGO", "PALMEIRAS", "CORINTHIANS", "SAOPAULO", "SANTOS", "VASCO", "GREMIO", "INTERNACIONAL", "CRUZEIRO", "ATLÉTICOMG", "SPORT", "SANTACRUZ"};
 String palavraSecreta;
 boolean[] letrasCorretas;
 int erros = 0;
