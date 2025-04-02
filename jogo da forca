@@ -1,9 +1,10 @@
-String[] palavras = {"FLAMENGO", "PALMEIRAS", "CORINTHIANS", "SAOPAULO", "SANTOS", "VASCO", "GREMIO", "INTERNACIONAL", "CRUZEIRO", "ATLÉTICOMINEIRO", "SPORT", "SANTACRUZ"};
+String[] palavras = {"FLAMENGO", "PALMEIRAS", "CORINTHIANS", "SAOPAULO", "SANTOS", "VASCO", "GREMIO", "INTERNACIONAL", "CRUZEIRO", "ATLETICOMINEIRO", "SPORT", "SANTACRUZ"};
 String palavraSecreta;
 boolean[] letrasCorretas;
 int erros = 0;
 String letrasTentadas = "";
 boolean jogoAtivo = true;
+boolean fimDeJogo = false;
 
 void setup() {
   size(600, 400);
@@ -21,6 +22,11 @@ void draw() {
 }
 
 void keyPressed() {
+  if (fimDeJogo && (key == 'r' || key == 'R')) {
+    reiniciarJogo();
+    return;
+  }
+  
   if (!jogoAtivo) return;
   char letra = Character.toUpperCase(key);
   if (Character.isLetter(letra) && letrasTentadas.indexOf(letra) == -1) {
@@ -36,11 +42,20 @@ void keyPressed() {
   }
 }
 
+void reiniciarJogo() {
+  palavraSecreta = palavras[int(random(palavras.length))];
+  letrasCorretas = new boolean[palavraSecreta.length()];
+  erros = 0;
+  letrasTentadas = "";
+  jogoAtivo = true;
+  fimDeJogo = false;
+}
+
 void desenhaForca() {
   stroke(0);
   line(100, 300, 200, 300);
   line(150, 300, 150, 100);
- line(150, 100, 250, 100);
+  line(150, 100, 250, 100);
   line(250, 100, 250, 130);
   
   if (erros > 0) ellipse(250, 150, 40, 40); // Cabeça
@@ -67,6 +82,7 @@ void desenhaPalavra() {
   text(exibicao, width / 2, 350);
   if (venceu) {
     jogoAtivo = false;
+    fimDeJogo = true;
   }
 }
 
@@ -80,9 +96,13 @@ void verificaFimDeJogo() {
   if (erros >= 6) {
     fill(255, 0, 0);
     text("Você perdeu! A palavra era " + palavraSecreta, width / 2, 50);
+    text("Pressione R para jogar novamente", width / 2, 80);
     jogoAtivo = false;
+    fimDeJogo = true;
   } else if (!jogoAtivo) {
     fill(0, 255, 0);
-    text("Parabéns! Você ganhou!", width / 2, 50);
-}
+    text("Parabéns! Você ganhou!", width / 2, 50);
+    text("Pressione R para jogar novamente", width / 2, 80);
+    fimDeJogo = true;
+  }
 }
