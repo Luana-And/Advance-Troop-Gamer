@@ -1,0 +1,135 @@
+// Jogo da Memória em Processing
+
+final int cols = 4;  
+final int rows = 4; 
+final int cardSize = 100;  
+String[] values;  
+String[][] board = new String[cols][rows]; 
+boolean[][] revealed = new boolean[cols][rows];  
+
+int[] firstPick = {-1, -1};  
+int[] secondPick = {-1, -1};  
+boolean checking = false;  
+int checkTime;  
+int matches = 0;  
+int totalPairs = (cols * rows) / 2;  
+
+void settings() {
+  size(cols * cardSize, rows * cardSize);  
+}
+
+void setup() {
+  values = generateValues();  
+  fillBoard();  
+}
+
+void draw() {
+  background(200);  
+  drawBoard();  
+
+  if (checking && millis() - checkTime > 1000) {
+    checkMatch();  
+    checking = false;
+  }
+
+  if (matches == totalPairs) {
+    fill(0, 200, 0);
+    textSize(32);
+    textAlign(CENTER, CENTER);
+    text("Parabéns!", width / 2, height / 2);
+    noLoop();  
+  }
+}
+
+void mousePressed() {
+  if (checking) return;  
+
+  int x = mouseX / cardSize;
+  int y = mouseY / cardSize;
+
+  if (x < cols && y < rows && !revealed[x][y]) {
+    revealed[x][y] = true;  
+
+    if (firstPick[0] == -1) {
+      firstPick[0] = x;
+      firstPick[1] = y;
+    } 
+    else if (secondPick[0] == -1) {
+      secondPick[0] = x;
+      secondPick[1] = y;
+      checking = true;  
+      checkTime = millis();  
+    }
+  }
+}
+
+void drawBoard() {
+  for (int i = 0; i < cols; i++) {
+    for (int j = 0; j < rows; j++) {
+      int x = i * cardSize;
+      int y = j * cardSize;
+      
+      stroke(0);
+      fill(255);
+      rect(x, y, cardSize, cardSize);  // Desenha a carta
+
+      if (revealed[i][j]) {
+        fill(0);
+        textSize(32);
+        textAlign(CENTER, CENTER);
+        text(board[i][j], x + cardSize / 2, y + cardSize / 2);
+      } else {
+        fill(150);  
+        rect(x + 5, y + 5, cardSize - 10, cardSize - 10);
+      }
+    }
+  }
+}
+
+void checkMatch() {
+  String first = board[firstPick[0]][firstPick[1]];
+  String second = board[secondPick[0]][secondPick[1]];
+  
+  if (!first.equals(second)) {
+    revealed[firstPick[0]][firstPick[1]] = false;
+    revealed[secondPick[0]][secondPick[1]] = false;
+  } else {
+    matches++;
+  }
+
+  firstPick[0] = -1;
+  secondPick[0] = -1;
+}
+
+String[] generateValues() {
+  String[] vals = new String[cols * rows];
+  char val = 'A';
+  for (int i = 0; i < vals.length; i += 2) {
+    vals[i] = str(val);  // Define o valor da carta
+    vals[i + 1] = str(val);  // Define o segundo valor do par
+    val++;  
+  }
+
+  shuffleArray(vals); 
+  return vals;  
+}
+
+void shuffleArray(String[] array) {
+  for (int i = array.length - 1; i > 0; i--) {
+    int j = (int) random(i + 1);  
+    // Troca os elementos de posição
+    String temp = array[i];
+    array[i] = array[j];
+    array[j] = temp;
+  }
+}
+
+void fillBoard() {
+  int index = 0;
+  for (int i = 0; i < cols; i++) {
+    for (int j = 0; j < rows; j++) {
+      board[i][j] = values[index];  
+      index++;
+    }
+  }
+}
