@@ -1,11 +1,19 @@
-// Jogo da Memória em Processing
-
 final int cols = 4;  
 final int rows = 4; 
 final int cardSize = 100;  
+final int telaLargura = 600;
+final int telaAltura = 500;
+
+int offsetX = (telaLargura - cols * cardSize) / 2;
+int offsetY = (telaAltura - rows * cardSize) / 2;
+
 String[] values;  
 String[][] board = new String[cols][rows]; 
 boolean[][] revealed = new boolean[cols][rows];  
+int botaoX = 0;
+int botaoY = 0;
+int botaoLargura = 200;
+int botaoAltura = 50;
 
 int[] firstPick = {-1, -1};  
 int[] secondPick = {-1, -1};  
@@ -15,20 +23,19 @@ int matches = 0;
 int totalPairs = (cols * rows) / 2;  
 boolean mostrandoHistoria = true;
 
-String historia = 
-  "Em um reino esquecido pelo tempo,\n" +
-  "um antigo livro mágico foi aberto pela primeira vez em séculos.\n\n" +
-  "Ao ser aberto, suas páginas voaram como folhas ao vento,\n" +
-  "espalhando símbolos mágicos por todo o tabuleiro encantado.\n\n" +
-  "A única forma de restaurar o poder do livro é encontrar os pares de símbolos\n" +
-  "escondidos entre as cartas antes que a magia desapareça.\n\n" +
-  "Você é o escolhido para resolver este enigma.\n\n" +
-  "Prepare-se...\n" +
-  "O jogo da memória está prestes a começar!";
-
+String historia =  
+  "Há muito tempo, um feiticeiro excêntrico tentou criar um feitiço de alegria eterna...\n" +
+  "Mas algo deu errado, e ele acabou aprisionando centenas de emojis mágicos dentro de cartas encantadas.\n\n" +
+  "Esses emojis — sorridentes, estressados, dançarinos, comedores de pizza —\n" +
+  "ficaram embaralhados em um tabuleiro misterioso.\n\n" +
+  "Agora, só há uma maneira de quebrar o feitiço:\n" +
+  "descobrir todos os pares de emojis antes que o tabuleiro se feche para sempre.\n\n" +
+  "Você é o herói desta jornada, o último leitor do feitiço...\n" +
+  "Com olhos atentos e memória afiada, você pode libertá-los.\n\n" +
+  "O desafio começa agora.";
 
 void settings() {
-  size(cols * cardSize, rows * cardSize);  
+  size(telaLargura, telaAltura);  
 }
 
 void setup() {
@@ -37,7 +44,7 @@ void setup() {
 }
 
 void draw() {
-  background(200);
+  background(173, 216,230);
 
   if (mostrandoHistoria) {
     mostrarHistoria();
@@ -55,8 +62,19 @@ void draw() {
     fill(0, 200, 0);
     textSize(32);
     textAlign(CENTER, CENTER);
-    text("Parabéns!", width / 2, height / 2);
-    noLoop();  
+    text("Parabéns!", width / 2, height / 2 - 40);
+
+    botaoX = width / 2 - botaoLargura / 2;
+    botaoY = height / 2 + 10;
+
+    fill(50, 150, 250);
+    rect(botaoX, botaoY, botaoLargura, botaoAltura, 10);
+
+    fill(255);
+    textSize(20);
+    text("Reiniciar", width / 2, botaoY + botaoAltura / 2);
+
+    noLoop();
   }
 }
 
@@ -73,11 +91,15 @@ void mostrarHistoria() {
   text("Clique para começar...", width / 2, height - 20);
 }
 
-
-
-
-
 void mousePressed() {
+  if (matches == totalPairs) {
+    if (mouseX > botaoX && mouseX < botaoX + botaoLargura &&
+        mouseY > botaoY && mouseY < botaoY + botaoAltura) {
+      reiniciarJogo();
+      return;
+    }
+  }
+
   if (mostrandoHistoria) {
     mostrandoHistoria = false;
     return;
@@ -85,10 +107,10 @@ void mousePressed() {
 
   if (checking) return;  
 
-  int x = mouseX / cardSize;
-  int y = mouseY / cardSize;
+  int x = (mouseX - offsetX) / cardSize;
+  int y = (mouseY - offsetY) / cardSize;
 
-  if (x < cols && y < rows && !revealed[x][y]) {
+  if (x >= 0 && x < cols && y >= 0 && y < rows && !revealed[x][y]) {
     revealed[x][y] = true;  
 
     if (firstPick[0] == -1) {
@@ -104,16 +126,15 @@ void mousePressed() {
   }
 }
 
-
 void drawBoard() {
   for (int i = 0; i < cols; i++) {
     for (int j = 0; j < rows; j++) {
-      int x = i * cardSize;
-      int y = j * cardSize;
+      int x = offsetX + i * cardSize;
+      int y = offsetY + j * cardSize;
       
       stroke(0);
       fill(255);
-      rect(x, y, cardSize, cardSize);  // Desenha a carta
+      rect(x, y, cardSize, cardSize);
 
       if (revealed[i][j]) {
         fill(0);
@@ -145,13 +166,12 @@ void checkMatch() {
 
 String[] generateValues() {
   String[] vals = new String[cols * rows];
-  char val = 'A';
-  for (int i = 0; i < vals.length; i += 2) {
-    vals[i] = str(val);  // Define o valor da carta
-    vals[i + 1] = str(val);  // Define o segundo valor do par
-    val++;  
+  String[] emojis = {":)",":(",":P",":O","'-.-","O.O","XD",":/"}; // 8 pares
+  int index = 0;
+  for (int i = 0; i < emojis.length; i++) {
+    vals[index++] = emojis[i];
+    vals[index++] = emojis[i];
   }
-
   shuffleArray(vals); 
   return vals;  
 }
@@ -159,7 +179,6 @@ String[] generateValues() {
 void shuffleArray(String[] array) {
   for (int i = array.length - 1; i > 0; i--) {
     int j = (int) random(i + 1);  
-    // Troca os elementos de posição
     String temp = array[i];
     array[i] = array[j];
     array[j] = temp;
@@ -174,4 +193,20 @@ void fillBoard() {
       index++;
     }
   }
+}
+
+void reiniciarJogo() {
+  values = generateValues();
+  fillBoard();
+  revealed = new boolean[cols][rows];
+
+  firstPick[0] = -1;
+  firstPick[1] = -1;
+  secondPick[0] = -1;
+  secondPick[1] = -1;
+
+  checking = false;
+  matches = 0;
+
+  loop();
 }
