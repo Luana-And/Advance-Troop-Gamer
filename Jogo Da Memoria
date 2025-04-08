@@ -1,80 +1,86 @@
-final int cols = 4;  
-final int rows = 4; 
-final int cardSize = 100;  
+final int cols = 4;
+final int rows = 4;
+final int cardSize = 100;
 final int telaLargura = 600;
 final int telaAltura = 500;
 
 int offsetX = (telaLargura - cols * cardSize) / 2;
 int offsetY = (telaAltura - rows * cardSize) / 2;
 
-String[] values;  
-String[][] board = new String[cols][rows]; 
-boolean[][] revealed = new boolean[cols][rows];  
-int botaoX = 0;
-int botaoY = 0;
+PImage[][] boardImages = new PImage[cols][rows];
+boolean[][] revealed = new boolean[cols][rows];
+
+int botaoX = 0, botaoY = 0;
 int botaoLargura = 200;
 int botaoAltura = 50;
 
-int[] firstPick = {-1, -1};  
-int[] secondPick = {-1, -1};  
-boolean checking = false;  
-int checkTime;  
-int matches = 0;  
-int totalPairs = (cols * rows) / 2;  
+int[] firstPick = {-1, -1};
+int[] secondPick = {-1, -1};
+boolean checking = false;
+int checkTime;
+
+int matches = 0;
+int totalPairs = (cols * rows) / 2;
 boolean mostrandoHistoria = true;
 
-String historia =  
-  "Há muito tempo, um feiticeiro excêntrico tentou criar um feitiço de alegria eterna...\n" +
-  "Mas algo deu errado, e ele acabou aprisionando centenas de emojis mágicos dentro de cartas encantadas.\n\n" +
-  "Esses emojis — sorridentes, estressados, dançarinos, comedores de pizza —\n" +
-  "ficaram embaralhados em um tabuleiro misterioso.\n\n" +
-  "Agora, só há uma maneira de quebrar o feitiço:\n" +
-  "descobrir todos os pares de emojis antes que o tabuleiro se feche para sempre.\n\n" +
-  "Você é o herói desta jornada, o último leitor do feitiço...\n" +
-  "Com olhos atentos e memória afiada, você pode libertá-los.\n\n" +
+int tentativasRestantes = 15; // limite de tentativas
+boolean fimDeJogo = false;
+
+String historia =
+  "Há muito tempo, em uma floresta mágica escondida dos olhos humanos...\n" +
+  "Um antigo guardião da natureza, desejando preservar a alegria dos animais para sempre,\n" +
+  "lançou um feitiço encantado que selou as criaturas mais adoráveis dentro de cartas mágicas.\n\n" +
+  "Filhotes brincalhões, corujas sábias, pandas sonolentos e até raposas curiosas...\n" +
+  "Todos foram aprisionados, espalhados aleatoriamente em um tabuleiro misterioso.\n\n" +
+  "Agora, só há uma maneira de libertá-los:\n" +
+  "descobrir todos os pares de animais antes que o encanto se torne permanente.\n\n" +
+  "Você é o escolhido pela própria floresta, com memória aguçada e coração corajoso...\n" +
+  "Liberte cada criatura e traga a harmonia de volta à natureza.\n\n" +
   "O desafio começa agora.";
 
+
 void settings() {
-  size(telaLargura, telaAltura);  
+  size(telaLargura, telaAltura);
 }
 
 void setup() {
-  values = generateValues();  
-  fillBoard();  
+  imageMode(CENTER);
+  ArrayList<PImage> imagens = generateImages();
+
+  int index = 0;
+  for (int i = 0; i < cols; i++) {
+    for (int j = 0; j < rows; j++) {
+      boardImages[i][j] = imagens.get(index++);
+    }
+  }
+
+  surface.setTitle("Jogo da Memória - Emojis Encantados");
 }
 
 void draw() {
-  background(173, 216,230);
+  background(173, 216, 230);
 
   if (mostrandoHistoria) {
     mostrarHistoria();
     return;
   }
 
-  drawBoard();  
+  drawBoard();
+
+  fill(0);
+  textSize(20);
+  textAlign(LEFT, TOP);
+  text("Tentativas restantes: " + tentativasRestantes, 20, 10);
 
   if (checking && millis() - checkTime > 1000) {
-    checkMatch();  
+    checkMatch();
     checking = false;
   }
 
   if (matches == totalPairs) {
-    fill(0, 200, 0);
-    textSize(32);
-    textAlign(CENTER, CENTER);
-    text("Parabéns!", width / 2, height / 2 - 40);
-
-    botaoX = width / 2 - botaoLargura / 2;
-    botaoY = height / 2 + 10;
-
-    fill(50, 150, 250);
-    rect(botaoX, botaoY, botaoLargura, botaoAltura, 10);
-
-    fill(255);
-    textSize(20);
-    text("Reiniciar", width / 2, botaoY + botaoAltura / 2);
-
-    noLoop();
+    mostrarMensagemFinal("Parabéns!");
+  } else if (tentativasRestantes <= 0) {
+    mostrarMensagemFinal("Fim de Jogo!");
   }
 }
 
@@ -91,8 +97,28 @@ void mostrarHistoria() {
   text("Clique para começar...", width / 2, height - 20);
 }
 
+void drawBoard() {
+  for (int i = 0; i < cols; i++) {
+    for (int j = 0; j < rows; j++) {
+      int x = offsetX + i * cardSize;
+      int y = offsetY + j * cardSize;
+
+      stroke(0);
+      fill(255);
+      rect(x, y, cardSize, cardSize);
+
+      if (revealed[i][j]) {
+        image(boardImages[i][j], x + cardSize / 2, y + cardSize / 2); // centraliza
+      } else {
+        fill(150);
+        rect(x + 5, y + 5, cardSize - 10, cardSize - 10);
+      }
+    }
+  }
+}
+
 void mousePressed() {
-  if (matches == totalPairs) {
+  if (fimDeJogo) {
     if (mouseX > botaoX && mouseX < botaoX + botaoLargura &&
         mouseY > botaoY && mouseY < botaoY + botaoAltura) {
       reiniciarJogo();
@@ -105,57 +131,34 @@ void mousePressed() {
     return;
   }
 
-  if (checking) return;  
+  if (checking || fimDeJogo) return;
 
   int x = (mouseX - offsetX) / cardSize;
   int y = (mouseY - offsetY) / cardSize;
 
   if (x >= 0 && x < cols && y >= 0 && y < rows && !revealed[x][y]) {
-    revealed[x][y] = true;  
+    revealed[x][y] = true;
 
     if (firstPick[0] == -1) {
       firstPick[0] = x;
       firstPick[1] = y;
-    } 
-    else if (secondPick[0] == -1) {
+    } else if (secondPick[0] == -1) {
       secondPick[0] = x;
       secondPick[1] = y;
-      checking = true;  
-      checkTime = millis();  
-    }
-  }
-}
-
-void drawBoard() {
-  for (int i = 0; i < cols; i++) {
-    for (int j = 0; j < rows; j++) {
-      int x = offsetX + i * cardSize;
-      int y = offsetY + j * cardSize;
-      
-      stroke(0);
-      fill(255);
-      rect(x, y, cardSize, cardSize);
-
-      if (revealed[i][j]) {
-        fill(0);
-        textSize(32);
-        textAlign(CENTER, CENTER);
-        text(board[i][j], x + cardSize / 2, y + cardSize / 2);
-      } else {
-        fill(150);  
-        rect(x + 5, y + 5, cardSize - 10, cardSize - 10);
-      }
+      checking = true;
+      checkTime = millis();
     }
   }
 }
 
 void checkMatch() {
-  String first = board[firstPick[0]][firstPick[1]];
-  String second = board[secondPick[0]][secondPick[1]];
-  
-  if (!first.equals(second)) {
+  PImage first = boardImages[firstPick[0]][firstPick[1]];
+  PImage second = boardImages[secondPick[0]][secondPick[1]];
+
+  if (first != second) {
     revealed[firstPick[0]][firstPick[1]] = false;
     revealed[secondPick[0]][secondPick[1]] = false;
+    tentativasRestantes--;
   } else {
     matches++;
   }
@@ -164,49 +167,67 @@ void checkMatch() {
   secondPick[0] = -1;
 }
 
-String[] generateValues() {
-  String[] vals = new String[cols * rows];
-  String[] emojis = {":)",":(",":P",":O","'-.-","O.O","XD",":/"}; // 8 pares
-  int index = 0;
-  for (int i = 0; i < emojis.length; i++) {
-    vals[index++] = emojis[i];
-    vals[index++] = emojis[i];
-  }
-  shuffleArray(vals); 
-  return vals;  
-}
+void mostrarMensagemFinal(String mensagem) {
+  fill(0, 200, 0);
+  textSize(32);
+  textAlign(CENTER, CENTER);
+  text(mensagem, width / 2, height / 2 - 40);
 
-void shuffleArray(String[] array) {
-  for (int i = array.length - 1; i > 0; i--) {
-    int j = (int) random(i + 1);  
-    String temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
-  }
-}
+  botaoX = width / 2 - botaoLargura / 2;
+  botaoY = height / 2 + 10;
 
-void fillBoard() {
-  int index = 0;
-  for (int i = 0; i < cols; i++) {
-    for (int j = 0; j < rows; j++) {
-      board[i][j] = values[index];  
-      index++;
-    }
-  }
+  fill(50, 150, 250);
+  rect(botaoX, botaoY, botaoLargura, botaoAltura, 10);
+
+  fill(255);
+  textSize(20);
+  text("Reiniciar", width / 2, botaoY + botaoAltura / 2);
+
+  fimDeJogo = true;
+  noLoop();
 }
 
 void reiniciarJogo() {
-  values = generateValues();
-  fillBoard();
+  ArrayList<PImage> imagens = generateImages();
+  int index = 0;
+  for (int i = 0; i < cols; i++) {
+    for (int j = 0; j < rows; j++) {
+      boardImages[i][j] = imagens.get(index++);
+    }
+  }
+
   revealed = new boolean[cols][rows];
-
   firstPick[0] = -1;
-  firstPick[1] = -1;
   secondPick[0] = -1;
-  secondPick[1] = -1;
-
   checking = false;
   matches = 0;
-
+  tentativasRestantes = 15;
+  fimDeJogo = false;
   loop();
 }
+
+ArrayList<PImage> generateImages() {
+  String[] urls = {
+    "https://i.pinimg.com/736x/22/df/ee/22dfee754a59ae06e41c7070fbf71f1f.jpg", // pato rosa
+    "https://i.pinimg.com/736x/2f/1f/3e/2f1f3e3317e14d22b7513c91d1a7d50a.jpg", // capivara
+    "https://i.pinimg.com/736x/af/ac/b7/afacb78aa35343cd5a49f8ea56b5b1b1.jpg", // raposa
+    "https://i.pinimg.com/736x/aa/8f/a2/aa8fa2fd9660257347033dcff18c171d.jpg", // ovelha
+    "https://i.pinimg.com/736x/93/d3/2e/93d32e82acf0496daa8b8dd7380ca8c5.jpg", // coruja
+    "https://i.pinimg.com/736x/f6/96/1f/f6961f7c84341ca40c813fd972cf9e63.jpg", // rato
+    "https://i.pinimg.com/736x/6a/1f/99/6a1f99724266aa8134a4e975993fa1ef.jpg", // panda
+    "https://i.pinimg.com/736x/8a/e5/c8/8ae5c897cbc230a352d698da334ac8aa.jpg" // caranguejo
+  };
+
+  ArrayList<PImage> list = new ArrayList<PImage>();
+
+  for (String url : urls) {
+    PImage img = loadImage(url);
+    img.resize(cardSize - 20, cardSize - 20); // imagem com margem de 10 px de cada lado
+    list.add(img);
+    list.add(img);
+  }
+
+  java.util.Collections.shuffle(list);
+  return list;
+}
+
