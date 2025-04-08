@@ -2,7 +2,7 @@
 float ballX, ballY, ballSpeedX, ballSpeedY;
 int ballSize = 20;
 
-// Variáveis das paletas
+// Paletas
 float paddleWidth = 15;
 float paddleHeight;
 float playerY, opponentY;
@@ -11,21 +11,152 @@ float paddleSpeed = 5;
 // Placar
 int playerScore = 0;
 int opponentScore = 0;
-int maxScore = 5; // Limite de pontos
+int maxScore = 5;
 
 // Estados do jogo
 boolean gameStarted = false;
 boolean gameOver = false;
+boolean mostrandoMenu = true;
 String winner = "";
-
-// Dificuldade
-String dificuldade = "normal"; // "facil", "normal", "dificil"
+String dificuldade = "";
 
 void setup() {
   size(800, 500);
   textAlign(CENTER);
-  selecionarDificuldade("normal");
-  iniciarJogo();
+}
+
+void draw() {
+  background(0);
+  
+  if (mostrandoMenu) {
+    exibirMenu();
+    return;
+  }
+  
+  if (gameOver) {
+    fill(255);
+    textSize(32);
+    text(winner + " venceu!", width/2, height/2 - 20);
+    text("Pressione espaço para reiniciar", width/2, height/2 + 30);
+    return;
+  }
+
+  // Linha central
+  stroke(255);
+  for (int i = 0; i < height; i += 20) {
+    line(width/2, i, width/2, i+10);
+  }
+
+  // Paletas
+  noStroke();
+  fill(255);
+  rect(20, playerY, paddleWidth, paddleHeight);
+  rect(width - 20 - paddleWidth, opponentY, paddleWidth, paddleHeight);
+
+  // Bola
+  ellipse(ballX, ballY, ballSize, ballSize);
+
+  // Movimento da bola
+  if (gameStarted) {
+    ballX += ballSpeedX;
+    ballY += ballSpeedY;
+  }
+
+  // Colisão com paredes
+  if (ballY < 0 || ballY > height) ballSpeedY *= -1;
+
+  // Colisão com paletas
+  if (ballX - ballSize/2 < 20 + paddleWidth && ballY > playerY && ballY < playerY + paddleHeight) {
+    ballSpeedX *= -1;
+    ballX = 20 + paddleWidth + ballSize/2;
+  }
+  if (ballX + ballSize/2 > width - 20 - paddleWidth && ballY > opponentY && ballY < opponentY + paddleHeight) {
+    ballSpeedX *= -1;
+    ballX = width - 20 - paddleWidth - ballSize/2;
+  }
+
+  // Pontuação
+  if (ballX < 0) {
+    opponentScore++;
+    verificarVencedor();
+    if (!gameOver) iniciarJogo();
+  }
+  if (ballX > width) {
+    playerScore++;
+    verificarVencedor();
+    if (!gameOver) iniciarJogo();
+  }
+
+  // Movimento do jogador
+  if (keyPressed && !gameOver) {
+    if (key == 'w' || key == 'W') playerY -= paddleSpeed;
+    if (key == 's' || key == 'S') playerY += paddleSpeed;
+  }
+
+  // Movimento da IA
+  if (opponentY + paddleHeight/2 < ballY) opponentY += paddleSpeed * 0.8;
+  if (opponentY + paddleHeight/2 > ballY) opponentY -= paddleSpeed * 0.8;
+
+  // Limites
+  playerY = constrain(playerY, 0, height - paddleHeight);
+  opponentY = constrain(opponentY, 0, height - paddleHeight);
+
+  // Placar
+  textSize(32);
+  text(playerScore, width/4, 50);
+  text(opponentScore, width*3/4, 50);
+
+  if (!gameStarted && !gameOver) {
+    textSize(20);
+    text("Pressione espaço para começar", width/2, height/2);
+  }
+}
+
+void keyPressed() {
+  if (key == ' ') {
+    if (gameOver) {
+      reiniciarJogo();
+      mostrandoMenu = true;
+    } else {
+      gameStarted = true;
+    }
+  }
+}
+
+// Menu inicial com dificuldade
+void exibirMenu() {
+  fill(255);
+  textSize(32);
+  text("PONG - Escolha a dificuldade", width/2, height/4);
+  textSize(24);
+
+  // Botões
+  drawBotao("Fácil", width/2 - 100, height/2 - 30, 200, 50);
+  drawBotao("Médio", width/2 - 100, height/2 + 40, 200, 50);
+  drawBotao("Difícil", width/2 - 100, height/2 + 110, 200, 50);
+}
+
+void drawBotao(String label, float x, float y, float w, float h) {
+  fill(50);
+  rect(x, y, w, h, 10);
+  fill(255);
+  text(label, x + w/2, y + h/2 + 8);
+}
+
+void mousePressed() {
+  if (mostrandoMenu) {
+    if (mouseDentro(width/2 - 100, height/2 - 30, 200, 50)) {
+      selecionarDificuldade("facil");
+    } else if (mouseDentro(width/2 - 100, height/2 + 40, 200, 50)) {
+      selecionarDificuldade("normal");
+    } else if (mouseDentro(width/2 - 100, height/2 + 110, 200, 50)) {
+      selecionarDificuldade("dificil");
+    }
+  }
+}
+
+boolean mouseDentro(float x, float y, float w, float h) {
+  return mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h;
 }
 
 void selecionarDificuldade(String nivel) {
@@ -43,6 +174,9 @@ void selecionarDificuldade(String nivel) {
     ballSpeedX = 6;
     ballSpeedY = 6;
   }
+
+  mostrandoMenu = false;
+  iniciarJogo();
 }
 
 void iniciarJogo() {
@@ -52,110 +186,17 @@ void iniciarJogo() {
   ballSpeedY *= random(1) > 0.5 ? 1 : -1;
   playerY = height/2 - paddleHeight/2;
   opponentY = height/2 - paddleHeight/2;
-}
-
-void draw() {
-  background(0);
-  
-  if (gameOver) {
-    fill(255);
-    textSize(32);
-    text("Vencedor: " + winner, width/2, height/2 - 20);
-    text("Reiniciando em 3 segundos...", width/2, height/2 + 30);
-    delay(3000);
-    reiniciarJogo();
-    return;
-  }
-  
-  // Desenha linha central
-  stroke(255);
-  for (int i = 0; i < height; i += 20) {
-    line(width/2, i, width/2, i+10);
-  }
-
-  // Desenha paletas
-  noStroke();
-  fill(255);
-  rect(20, playerY, paddleWidth, paddleHeight);
-  rect(width - 20 - paddleWidth, opponentY, paddleWidth, paddleHeight);
-
-  // Desenha bola
-  ellipse(ballX, ballY, ballSize, ballSize);
-
-  // Movimenta bola
-  if (gameStarted) {
-    ballX += ballSpeedX;
-    ballY += ballSpeedY;
-  }
-
-  // Colisão com topo/fundo
-  if (ballY < 0 || ballY > height) ballSpeedY *= -1;
-
-  // Colisão com paletas
-  if (ballX - ballSize/2 < 20 + paddleWidth && ballY > playerY && ballY < playerY + paddleHeight) {
-    ballSpeedX *= -1;
-    ballX = 20 + paddleWidth + ballSize/2;
-  }
-  if (ballX + ballSize/2 > width - 20 - paddleWidth && ballY > opponentY && ballY < opponentY + paddleHeight) {
-    ballSpeedX *= -1;
-    ballX = width - 20 - paddleWidth - ballSize/2;
-  }
-
-  // Pontuação
-  if (ballX < 0) {
-    opponentScore++;
-    verificarVencedor();
-    iniciarJogo();
-  }
-  if (ballX > width) {
-    playerScore++;
-    verificarVencedor();
-    iniciarJogo();
-  }
-
-  // Movimento do jogador
-  if (keyPressed) {
-    if (key == 'w' || key == 'W') playerY -= paddleSpeed;
-    if (key == 's' || key == 'S') playerY += paddleSpeed;
-  }
-
-  // Movimento do oponente (IA simples)
-  if (opponentY + paddleHeight/2 < ballY) opponentY += paddleSpeed * 0.8;
-  if (opponentY + paddleHeight/2 > ballY) opponentY -= paddleSpeed * 0.8;
-
-  // Limites das paletas
-  playerY = constrain(playerY, 0, height - paddleHeight);
-  opponentY = constrain(opponentY, 0, height - paddleHeight);
-
-  // Placar
-  textSize(32);
-  text(playerScore, width/4, 50);
-  text(opponentScore, width*3/4, 50);
-
-  // Instruções iniciais
-  if (!gameStarted) {
-    textSize(20);
-    text("Pressione espaço para começar", width/2, height/2);
-  }
-}
-
-void keyPressed() {
-  if (key == ' ') {
-    gameStarted = true;
-  }
-
-  // Teclas de dificuldade
-  if (key == '1') selecionarDificuldade("facil");
-  if (key == '2') selecionarDificuldade("normal");
-  if (key == '3') selecionarDificuldade("dificil");
+  gameStarted = false;
 }
 
 void verificarVencedor() {
   if (playerScore >= maxScore) {
     gameOver = true;
+    gameStarted = false;
     winner = "Jogador";
   } else if (opponentScore >= maxScore) {
     gameOver = true;
+    gameStarted = false;
     winner = "Computador";
   }
 }
@@ -164,5 +205,5 @@ void reiniciarJogo() {
   playerScore = 0;
   opponentScore = 0;
   gameOver = false;
-  iniciarJogo();
+  gameStarted = false;
 }
