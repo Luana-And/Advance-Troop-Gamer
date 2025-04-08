@@ -13,6 +13,19 @@ boolean checking = false;
 int checkTime;  
 int matches = 0;  
 int totalPairs = (cols * rows) / 2;  
+boolean mostrandoHistoria = true;
+
+String historia = 
+  "Em um reino esquecido pelo tempo,\n" +
+  "um antigo livro mágico foi aberto pela primeira vez em séculos.\n\n" +
+  "Ao ser aberto, suas páginas voaram como folhas ao vento,\n" +
+  "espalhando símbolos mágicos por todo o tabuleiro encantado.\n\n" +
+  "A única forma de restaurar o poder do livro é encontrar os pares de símbolos\n" +
+  "escondidos entre as cartas antes que a magia desapareça.\n\n" +
+  "Você é o escolhido para resolver este enigma.\n\n" +
+  "Prepare-se...\n" +
+  "O jogo da memória está prestes a começar!";
+
 
 void settings() {
   size(cols * cardSize, rows * cardSize);  
@@ -24,7 +37,13 @@ void setup() {
 }
 
 void draw() {
-  background(200);  
+  background(200);
+
+  if (mostrandoHistoria) {
+    mostrarHistoria();
+    return;
+  }
+
   drawBoard();  
 
   if (checking && millis() - checkTime > 1000) {
@@ -41,7 +60,29 @@ void draw() {
   }
 }
 
+void mostrarHistoria() {
+  fill(0);
+  textSize(18);
+  textAlign(LEFT, TOP);
+  textLeading(28);
+  text(historia, 20, 20, width - 40, height - 40);
+
+  fill(50, 100, 200);
+  textSize(20);
+  textAlign(CENTER, BOTTOM);
+  text("Clique para começar...", width / 2, height - 20);
+}
+
+
+
+
+
 void mousePressed() {
+  if (mostrandoHistoria) {
+    mostrandoHistoria = false;
+    return;
+  }
+
   if (checking) return;  
 
   int x = mouseX / cardSize;
@@ -62,6 +103,7 @@ void mousePressed() {
     }
   }
 }
+
 
 void drawBoard() {
   for (int i = 0; i < cols; i++) {
