@@ -1,0 +1,168 @@
+// Variáveis da bola
+float ballX, ballY, ballSpeedX, ballSpeedY;
+int ballSize = 20;
+
+// Variáveis das paletas
+float paddleWidth = 15;
+float paddleHeight;
+float playerY, opponentY;
+float paddleSpeed = 5;
+
+// Placar
+int playerScore = 0;
+int opponentScore = 0;
+int maxScore = 5; // Limite de pontos
+
+// Estados do jogo
+boolean gameStarted = false;
+boolean gameOver = false;
+String winner = "";
+
+// Dificuldade
+String dificuldade = "normal"; // "facil", "normal", "dificil"
+
+void setup() {
+  size(800, 500);
+  textAlign(CENTER);
+  selecionarDificuldade("normal");
+  iniciarJogo();
+}
+
+void selecionarDificuldade(String nivel) {
+  dificuldade = nivel;
+  if (nivel.equals("facil")) {
+    paddleHeight = 120;
+    ballSpeedX = 4;
+    ballSpeedY = 4;
+  } else if (nivel.equals("normal")) {
+    paddleHeight = 80;
+    ballSpeedX = 5;
+    ballSpeedY = 5;
+  } else if (nivel.equals("dificil")) {
+    paddleHeight = 60;
+    ballSpeedX = 6;
+    ballSpeedY = 6;
+  }
+}
+
+void iniciarJogo() {
+  ballX = width/2;
+  ballY = height/2;
+  ballSpeedX *= random(1) > 0.5 ? 1 : -1;
+  ballSpeedY *= random(1) > 0.5 ? 1 : -1;
+  playerY = height/2 - paddleHeight/2;
+  opponentY = height/2 - paddleHeight/2;
+}
+
+void draw() {
+  background(0);
+  
+  if (gameOver) {
+    fill(255);
+    textSize(32);
+    text("Vencedor: " + winner, width/2, height/2 - 20);
+    text("Reiniciando em 3 segundos...", width/2, height/2 + 30);
+    delay(3000);
+    reiniciarJogo();
+    return;
+  }
+  
+  // Desenha linha central
+  stroke(255);
+  for (int i = 0; i < height; i += 20) {
+    line(width/2, i, width/2, i+10);
+  }
+
+  // Desenha paletas
+  noStroke();
+  fill(255);
+  rect(20, playerY, paddleWidth, paddleHeight);
+  rect(width - 20 - paddleWidth, opponentY, paddleWidth, paddleHeight);
+
+  // Desenha bola
+  ellipse(ballX, ballY, ballSize, ballSize);
+
+  // Movimenta bola
+  if (gameStarted) {
+    ballX += ballSpeedX;
+    ballY += ballSpeedY;
+  }
+
+  // Colisão com topo/fundo
+  if (ballY < 0 || ballY > height) ballSpeedY *= -1;
+
+  // Colisão com paletas
+  if (ballX - ballSize/2 < 20 + paddleWidth && ballY > playerY && ballY < playerY + paddleHeight) {
+    ballSpeedX *= -1;
+    ballX = 20 + paddleWidth + ballSize/2;
+  }
+  if (ballX + ballSize/2 > width - 20 - paddleWidth && ballY > opponentY && ballY < opponentY + paddleHeight) {
+    ballSpeedX *= -1;
+    ballX = width - 20 - paddleWidth - ballSize/2;
+  }
+
+  // Pontuação
+  if (ballX < 0) {
+    opponentScore++;
+    verificarVencedor();
+    iniciarJogo();
+  }
+  if (ballX > width) {
+    playerScore++;
+    verificarVencedor();
+    iniciarJogo();
+  }
+
+  // Movimento do jogador
+  if (keyPressed) {
+    if (key == 'w' || key == 'W') playerY -= paddleSpeed;
+    if (key == 's' || key == 'S') playerY += paddleSpeed;
+  }
+
+  // Movimento do oponente (IA simples)
+  if (opponentY + paddleHeight/2 < ballY) opponentY += paddleSpeed * 0.8;
+  if (opponentY + paddleHeight/2 > ballY) opponentY -= paddleSpeed * 0.8;
+
+  // Limites das paletas
+  playerY = constrain(playerY, 0, height - paddleHeight);
+  opponentY = constrain(opponentY, 0, height - paddleHeight);
+
+  // Placar
+  textSize(32);
+  text(playerScore, width/4, 50);
+  text(opponentScore, width*3/4, 50);
+
+  // Instruções iniciais
+  if (!gameStarted) {
+    textSize(20);
+    text("Pressione espaço para começar", width/2, height/2);
+  }
+}
+
+void keyPressed() {
+  if (key == ' ') {
+    gameStarted = true;
+  }
+
+  // Teclas de dificuldade
+  if (key == '1') selecionarDificuldade("facil");
+  if (key == '2') selecionarDificuldade("normal");
+  if (key == '3') selecionarDificuldade("dificil");
+}
+
+void verificarVencedor() {
+  if (playerScore >= maxScore) {
+    gameOver = true;
+    winner = "Jogador";
+  } else if (opponentScore >= maxScore) {
+    gameOver = true;
+    winner = "Computador";
+  }
+}
+
+void reiniciarJogo() {
+  playerScore = 0;
+  opponentScore = 0;
+  gameOver = false;
+  iniciarJogo();
+}
