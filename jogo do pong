@@ -20,6 +20,9 @@ boolean mostrandoMenu = true;
 String winner = "";
 String dificuldade = "";
 
+// IA
+float dificuldadeIA = 0.8; // MODIFICAÇÃO: valor padrão
+
 void setup() {
   size(800, 500);
   textAlign(CENTER);
@@ -93,9 +96,9 @@ void draw() {
     if (key == 's' || key == 'S') playerY += paddleSpeed;
   }
 
-  // Movimento da IA
-  if (opponentY + paddleHeight/2 < ballY) opponentY += paddleSpeed * 0.8;
-  if (opponentY + paddleHeight/2 > ballY) opponentY -= paddleSpeed * 0.8;
+  // Movimento da IA (com dificuldade ajustada) - MODIFICAÇÃO
+  if (opponentY + paddleHeight/2 < ballY) opponentY += paddleSpeed * dificuldadeIA;
+  if (opponentY + paddleHeight/2 > ballY) opponentY -= paddleSpeed * dificuldadeIA;
 
   // Limites
   playerY = constrain(playerY, 0, height - paddleHeight);
@@ -159,20 +162,24 @@ boolean mouseDentro(float x, float y, float w, float h) {
   return mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h;
 }
 
+// Modificamos aqui também a IA com base na dificuldade
 void selecionarDificuldade(String nivel) {
   dificuldade = nivel;
   if (nivel.equals("facil")) {
     paddleHeight = 120;
     ballSpeedX = 4;
     ballSpeedY = 4;
+    dificuldadeIA = 0.6; // MODIFICAÇÃO: IA mais lenta
   } else if (nivel.equals("normal")) {
     paddleHeight = 80;
     ballSpeedX = 5;
     ballSpeedY = 5;
+    dificuldadeIA = 0.8;
   } else if (nivel.equals("dificil")) {
     paddleHeight = 60;
     ballSpeedX = 6;
     ballSpeedY = 6;
+    dificuldadeIA = 1.0;
   }
 
   mostrandoMenu = false;
