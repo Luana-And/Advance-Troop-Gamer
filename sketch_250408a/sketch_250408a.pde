@@ -1,16 +1,14 @@
 import processing.sound.*;
 
-final int cols = 4;
-final int rows = 4;
+int cols, rows;
 final int cardSize = 100;
-final int telaLargura = 600;
-final int telaAltura = 500;
+final int telaLargura = 700;
+final int telaAltura = 600;
 
-int offsetX = (telaLargura - cols * cardSize) / 2;
-int offsetY = (telaAltura - rows * cardSize) / 2;
+int offsetX, offsetY;
 
-PImage[][] boardImages = new PImage[cols][rows];
-boolean[][] revealed = new boolean[cols][rows];
+PImage[][] boardImages;
+boolean[][] revealed;
 
 int botaoX = 0, botaoY = 0;
 int botaoLargura = 200;
@@ -22,11 +20,13 @@ boolean checking = false;
 int checkTime;
 
 int matches = 0;
-int totalPairs = (cols * rows) / 2;
-boolean mostrandoHistoria = true;
+int totalPairs;
+boolean mostrandoHistoria = false;
 
-int tentativasRestantes = 15;
+int tentativasRestantes;
 boolean fimDeJogo = false;
+boolean selecionandoModo = true;
+boolean modoDificil = false;
 
 String historia =
   "Há muito tempo, em uma floresta mágica escondida dos olhos humanos...\n" +
@@ -54,18 +54,8 @@ void settings() {
 
 void setup() {
   imageMode(CENTER);
-  ArrayList<PImage> imagens = generateImages();
-
-  int index = 0;
-  for (int i = 0; i < cols; i++) {
-    for (int j = 0; j < rows; j++) {
-      boardImages[i][j] = imagens.get(index++);
-    }
-  }
-
   surface.setTitle("Jogo da Memória - Emojis Encantados");
 
-  // Carregar sons
   flipSound = new SoundFile(this, "flip.wav");
   matchSound = new SoundFile(this, "match.wav");
   failSound = new SoundFile(this, "fail.wav");
@@ -76,6 +66,11 @@ void setup() {
 
 void draw() {
   background(173, 216, 230);
+
+  if (selecionandoModo) {
+    mostrarSelecaoModo();
+    return;
+  }
 
   if (mostrandoHistoria) {
     mostrarHistoria();
@@ -98,6 +93,60 @@ void draw() {
     mostrarMensagemFinal("Parabéns!");
   } else if (tentativasRestantes <= 0) {
     mostrarMensagemFinal("Fim de Jogo!");
+  }
+}
+
+void mostrarSelecaoModo() {
+  fill(0);
+  textAlign(CENTER, TOP);
+  textSize(24);
+  text("Escolha o modo de jogo", width / 2, 80);
+
+  // Botão Normal
+  fill(100, 200, 100);
+  rect(width / 2 - 110, 200, 100, 50, 10);
+  fill(255);
+  textSize(18);
+  text("Normal", width / 2 - 60, 230);
+
+  // Botão Difícil
+  fill(200, 100, 100);
+  rect(width / 2 + 10, 200, 100, 50, 10);
+  fill(255);
+  text("Difícil", width / 2 + 60, 230);
+}
+
+void iniciarJogo() {
+  if (modoDificil) {
+    cols = 6;
+    rows = 6;
+    tentativasRestantes = 20;
+  } else {
+    cols = 4;
+    rows = 4;
+    tentativasRestantes = 15;
+  }
+
+  offsetX = (telaLargura - cols * cardSize) / 2;
+  offsetY = (telaAltura - rows * cardSize) / 2;
+
+  boardImages = new PImage[cols][rows];
+  revealed = new boolean[cols][rows];
+  firstPick[0] = -1;
+  secondPick[0] = -1;
+  checking = false;
+  matches = 0;
+  fimDeJogo = false;
+  mostrandoHistoria = true;
+  selecionandoModo = false;
+  totalPairs = (cols * rows) / 2;
+
+  ArrayList<PImage> imagens = generateImages();
+  int index = 0;
+  for (int i = 0; i < cols; i++) {
+    for (int j = 0; j < rows; j++) {
+      boardImages[i][j] = imagens.get(index++);
+    }
   }
 }
 
@@ -135,6 +184,21 @@ void drawBoard() {
 }
 
 void mousePressed() {
+  if (selecionandoModo) {
+    if (mouseX > width / 2 - 110 && mouseX < width / 2 - 10 &&
+        mouseY > 200 && mouseY < 250) {
+      modoDificil = false;
+      clickSound.play();
+      iniciarJogo();
+    } else if (mouseX > width / 2 + 10 && mouseX < width / 2 + 110 &&
+               mouseY > 200 && mouseY < 250) {
+      modoDificil = true;
+      clickSound.play();
+      iniciarJogo();
+    }
+    return;
+  }
+
   if (fimDeJogo) {
     if (mouseX > botaoX && mouseX < botaoX + botaoLargura &&
         mouseY > botaoY && mouseY < botaoY + botaoAltura) {
@@ -217,21 +281,7 @@ void mostrarMensagemFinal(String mensagem) {
 }
 
 void reiniciarJogo() {
-  ArrayList<PImage> imagens = generateImages();
-  int index = 0;
-  for (int i = 0; i < cols; i++) {
-    for (int j = 0; j < rows; j++) {
-      boardImages[i][j] = imagens.get(index++);
-    }
-  }
-
-  revealed = new boolean[cols][rows];
-  firstPick[0] = -1;
-  secondPick[0] = -1;
-  checking = false;
-  matches = 0;
-  tentativasRestantes = 15;
-  fimDeJogo = false;
+  iniciarJogo();
   loop();
 }
 
@@ -244,12 +294,24 @@ ArrayList<PImage> generateImages() {
     "https://i.pinimg.com/736x/93/d3/2e/93d32e82acf0496daa8b8dd7380ca8c5.jpg",
     "https://i.pinimg.com/736x/f6/96/1f/f6961f7c84341ca40c813fd972cf9e63.jpg",
     "https://i.pinimg.com/736x/6a/1f/99/6a1f99724266aa8134a4e975993fa1ef.jpg",
-    "https://i.pinimg.com/736x/8a/e5/c8/8ae5c897cbc230a352d698da334ac8aa.jpg"
+    "https://i.pinimg.com/736x/8a/e5/c8/8ae5c897cbc230a352d698da334ac8aa.jpg",
+    // Adicione mais imagens se for jogar no modo difícil (6x6 = 18 pares)
+    "https://i.pinimg.com/736x/e3/54/13/e35413a55ffcd11f680361f13806654b.jpg",
+    "https://i.pinimg.com/736x/36/0d/ea/360deac358acc13e46d9ae73cc12baca.jpg",
+    "https://i.pinimg.com/736x/ef/f6/b7/eff6b738f12d04951bbf98e1de453707.jpg",
+    "https://i.pinimg.com/736x/5e/f8/15/5ef815dcd2d391384eea6d9cb662d041.jpg",
+    "https://i.pinimg.com/736x/8d/a2/76/8da27692a9a89250a46e9e04ca7fe98b.jpg",
+    "https://i.pinimg.com/736x/ea/3b/6b/ea3b6b22dade24a2acd2e3603505e15e.jpg",
+    "https://i.pinimg.com/736x/31/34/8e/31348ee2c8964e2e6792b4b2eff805e5.jpg",
+    "https://i.pinimg.com/736x/9c/88/b6/9c88b67424c08fa96eea985a259ec94e.jpg",
+    "https://i.pinimg.com/736x/16/1b/54/161b54ecc97a246ed263d4b7f3c811a3.jpg",
+    "https://i.pinimg.com/736x/dd/e0/7b/dde07b6f656de77f09e2ee29362b2db1.jpg"
   };
 
   ArrayList<PImage> list = new ArrayList<PImage>();
 
   for (String url : urls) {
+    if (list.size() >= totalPairs * 2) break; // usar só o necessário
     PImage img = loadImage(url);
     img.resize(cardSize - 20, cardSize - 20);
     list.add(img);
@@ -258,4 +320,4 @@ ArrayList<PImage> generateImages() {
 
   java.util.Collections.shuffle(list);
   return list;
-}
+}  
