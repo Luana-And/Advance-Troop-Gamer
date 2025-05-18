@@ -14,7 +14,7 @@ void settings() {
 }
 
 void setup() {
-  frameRate(10);
+  frameRate(5);
   iniciarJogo();
 }
 
@@ -53,22 +53,33 @@ void spawnFood() {
 }
 
 void keyPressed() {
-  if (!gameOver) {
-    if (keyCode == UP) snake.setDir(0, -1);
-    else if (keyCode == DOWN) snake.setDir(0, 1);
-    else if (keyCode == LEFT) snake.setDir(-1, 0);
-    else if (keyCode == RIGHT) snake.setDir(1, 0);
+  println("Tecla:", key); // Mostra a tecla pressionada no console
+
+  if (gameOver) return;
+
+  if ((key == 'w' || key == 'W') && snake.ydir != 1) {
+    snake.setDir(0, -1);
+  } else if ((key == 's' || key == 'S') && snake.ydir != -1) {
+    snake.setDir(0, 1);
+  } else if ((key == 'a' || key == 'A') && snake.xdir != 1) {
+    snake.setDir(-1, 0);
+  } else if ((key == 'd' || key == 'D') && snake.xdir != -1) {
+    snake.setDir(1, 0);
   }
 }
+
+
 
 void mousePressed() {
   if (gameOver) {
     if (mouseX >= buttonX && mouseX <= buttonX + buttonW &&
         mouseY >= buttonY && mouseY <= buttonY + buttonH) {
+      println("Botão clicado!");
       iniciarJogo();
     }
   }
 }
+
 
 void mostrarGameOver() {
   fill(255, 0, 0);
@@ -76,16 +87,23 @@ void mostrarGameOver() {
   textAlign(CENTER, CENTER);
   text("Game Over!", width / 2, height / 2 - 40);
 
-  // Desenhar botão de reiniciar
+  // Posição do botão
   buttonX = width / 2 - buttonW / 2;
   buttonY = height / 2;
+
+  // Desenhar botão verde com borda
+  stroke(255);
+  strokeWeight(2);
   fill(50, 200, 50);
   rect(buttonX, buttonY, buttonW, buttonH, 10);
+  noStroke();
 
+  // Texto do botão
   fill(255);
   textSize(20);
   text("Reiniciar", width / 2, buttonY + buttonH / 2);
 }
+
 
 class Snake {
   ArrayList<PVector> body;
@@ -95,6 +113,8 @@ class Snake {
   Snake() {
     body = new ArrayList<PVector>();
     body.add(new PVector(floor(cols / 2), floor(rows / 2)));
+   xdir = 1;
+  ydir = 0; 
   }
 
   void setDir(int x, int y) {
@@ -108,12 +128,15 @@ class Snake {
   }
 
   void move() {
-    PVector head = body.get(0).copy();
-    head.x += xdir;
-    head.y += ydir;
-    body.add(0, head);
-    body.remove(body.size() - 1);
-  }
+  if (xdir == 0 && ydir == 0) return; // não se move se não tiver direção
+
+  PVector head = body.get(0).copy();
+  head.x += xdir;
+  head.y += ydir;
+  body.add(0, head);
+  body.remove(body.size() - 1);
+}
+
 
   void grow() {
     PVector head = body.get(0).copy();
@@ -155,6 +178,6 @@ class Snake {
 
   void encerrarJogo() {
     gameOver = true;
-    noLoop();
+    
   }
 }
