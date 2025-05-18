@@ -1,0 +1,160 @@
+int cols = 20;
+int rows = 20;
+int cellSize = 20;
+
+Snake snake;
+PVector food;
+boolean gameOver = false;
+
+// Posição e tamanho do botão
+int buttonX, buttonY, buttonW = 150, buttonH = 40;
+
+void settings() {
+  size(cols * cellSize, rows * cellSize);
+}
+
+void setup() {
+  frameRate(10);
+  iniciarJogo();
+}
+
+void draw() {
+  background(0);
+
+  if (!gameOver) {
+    snake.move();
+    snake.checkCollision();
+    snake.show();
+
+    fill(255, 0, 0);
+    rect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
+
+    if (snake.head().equals(food)) {
+      snake.grow();
+      spawnFood();
+    }
+  } else {
+    mostrarGameOver();
+  }
+}
+
+void iniciarJogo() {
+  snake = new Snake();
+  spawnFood();
+  gameOver = false;
+  loop();
+}
+
+void spawnFood() {
+  food = new PVector(floor(random(cols)), floor(random(rows)));
+  while (snake.contains(food)) {
+    food = new PVector(floor(random(cols)), floor(random(rows)));
+  }
+}
+
+void keyPressed() {
+  if (!gameOver) {
+    if (keyCode == UP) snake.setDir(0, -1);
+    else if (keyCode == DOWN) snake.setDir(0, 1);
+    else if (keyCode == LEFT) snake.setDir(-1, 0);
+    else if (keyCode == RIGHT) snake.setDir(1, 0);
+  }
+}
+
+void mousePressed() {
+  if (gameOver) {
+    if (mouseX >= buttonX && mouseX <= buttonX + buttonW &&
+        mouseY >= buttonY && mouseY <= buttonY + buttonH) {
+      iniciarJogo();
+    }
+  }
+}
+
+void mostrarGameOver() {
+  fill(255, 0, 0);
+  textSize(32);
+  textAlign(CENTER, CENTER);
+  text("Game Over!", width / 2, height / 2 - 40);
+
+  // Desenhar botão de reiniciar
+  buttonX = width / 2 - buttonW / 2;
+  buttonY = height / 2;
+  fill(50, 200, 50);
+  rect(buttonX, buttonY, buttonW, buttonH, 10);
+
+  fill(255);
+  textSize(20);
+  text("Reiniciar", width / 2, buttonY + buttonH / 2);
+}
+
+class Snake {
+  ArrayList<PVector> body;
+  int xdir = 1;
+  int ydir = 0;
+
+  Snake() {
+    body = new ArrayList<PVector>();
+    body.add(new PVector(floor(cols / 2), floor(rows / 2)));
+  }
+
+  void setDir(int x, int y) {
+    if (body.size() > 1) {
+      PVector head = body.get(0);
+      PVector neck = body.get(1);
+      if (head.x + x == neck.x && head.y + y == neck.y) return;
+    }
+    xdir = x;
+    ydir = y;
+  }
+
+  void move() {
+    PVector head = body.get(0).copy();
+    head.x += xdir;
+    head.y += ydir;
+    body.add(0, head);
+    body.remove(body.size() - 1);
+  }
+
+  void grow() {
+    PVector head = body.get(0).copy();
+    head.x += xdir;
+    head.y += ydir;
+    body.add(0, head);
+  }
+
+  void show() {
+    fill(0, 255, 0);
+    for (PVector part : body) {
+      rect(part.x * cellSize, part.y * cellSize, cellSize, cellSize);
+    }
+  }
+
+  PVector head() {
+    return body.get(0);
+  }
+
+  boolean contains(PVector pos) {
+    for (PVector part : body) {
+      if (part.equals(pos)) return true;
+    }
+    return false;
+  }
+
+  void checkCollision() {
+    PVector head = body.get(0);
+    if (head.x < 0 || head.x >= cols || head.y < 0 || head.y >= rows) {
+      encerrarJogo();
+    }
+
+    for (int i = 1; i < body.size(); i++) {
+      if (head.equals(body.get(i))) {
+        encerrarJogo();
+      }
+    }
+  }
+
+  void encerrarJogo() {
+    gameOver = true;
+    noLoop();
+  }
+}
