@@ -1,6 +1,8 @@
-int cols = 20;
-int rows = 20;
+int cols = 40;
+int rows = 40;
 int cellSize = 20;
+int menuButtonX, menuButtonY,menuButtonW = 150, menuButtonH = 40;
+
 
 Snake snake;
 PVector food;
@@ -132,6 +134,11 @@ void mousePressed() {
     if (mouseX >= buttonX && mouseX <= buttonX + buttonW &&
         mouseY >= buttonY && mouseY <= buttonY + buttonH) {
       iniciarJogo();
+        } else if (mouseX >= menuButtonX && mouseX <= menuButtonX + menuButtonW && 
+                   mouseY >= menuButtonY && mouseY <= menuButtonY + menuButtonH) {
+         gameOver = false;
+         jogoIniciado = false;
+         mostrarMenu = true;
     }
   }
 }
@@ -140,17 +147,27 @@ void mostrarGameOver() {
   fill(255, 0, 0);
   textSize(32);
   textAlign(CENTER, CENTER);
-  text("Game Over!", width / 2, height / 2 - 40);
+  text("Game Over!", width / 2, height / 2 - 60);
 
   // Desenhar botão de reiniciar
-  buttonX = width / 2 - buttonW / 2;
+  buttonX = width / 2 - buttonW - 10;
   buttonY = height / 2;
   fill(50, 200, 50);
   rect(buttonX, buttonY, buttonW, buttonH, 10);
 
   fill(255);
   textSize(20);
-  text("Reiniciar", width / 2, buttonY + buttonH / 2);
+  text("Reiniciar", buttonX + buttonW / 2, buttonY + buttonH / 2);
+  
+  
+  // Botao menu
+  menuButtonX = width / 2 + 10;
+  menuButtonY = buttonY;
+  fill(50, 150, 200);
+  rect(menuButtonX, menuButtonY, menuButtonW, menuButtonH, 10);
+  fill(255);
+  text("Menu", menuButtonX + menuButtonW / 2, menuButtonY + menuButtonH / 2);
+  
 }
 
 // Classe Snake
