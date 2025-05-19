@@ -6,7 +6,22 @@ Snake snake;
 PVector food;
 boolean gameOver = false;
 
-// Posição e tamanho do botão
+// Estados do jogo
+boolean jogoIniciado = false;
+boolean mostrarMenu = true;
+
+// Texto da história
+String historia = 
+  "Há muito tempo, em uma floresta mágica,\n" +
+  "vive uma jovem cobra chamada Luma.\n" +
+  "Luma precisa comer muito para ganhar forças\n" +
+  "e proteger a floresta das sombras que se aproximam.\n" +
+  "Ajude Luma a crescer forte comendo o máximo que puder!";
+
+// Dificuldade
+int dificuldade = 1; // 0 = fácil, 1 = normal, 2 = difícil
+
+// Botão de reinício
 int buttonX, buttonY, buttonW = 150, buttonH = 40;
 
 void settings() {
@@ -14,12 +29,18 @@ void settings() {
 }
 
 void setup() {
-  frameRate(5);
-  iniciarJogo();
+  frameRate(8);
 }
 
 void draw() {
   background(0);
+
+  if (mostrarMenu) {
+    mostrarTelaInicial();
+    return;
+  }
+
+  if (!jogoIniciado) return;
 
   if (!gameOver) {
     snake.move();
@@ -38,6 +59,46 @@ void draw() {
   }
 }
 
+void mostrarTelaInicial() {
+  fill(255);
+  textAlign(CENTER);
+  textSize(18);
+  text(historia, width / 2, 80);
+
+  // Botões de dificuldade
+  textSize(20);
+  button("FÁCIL", width / 2 - 75, 200, () -> iniciarComDificuldade(0));
+  button("NORMAL", width / 2 - 75, 260, () -> iniciarComDificuldade(1));
+  button("DIFÍCIL", width / 2 - 75, 320, () -> iniciarComDificuldade(2));
+}
+
+void button(String label, int x, int y, Runnable onClick) {
+  int w = 150, h = 40;
+  fill(50, 200, 50);
+  rect(x, y, w, h, 10);
+
+  fill(255);
+  textSize(20);
+  textAlign(CENTER, CENTER);
+  text(label, x + w / 2, y + h / 2); // Centraliza o texto no botão
+
+  if (mousePressed &&
+      mouseX >= x && mouseX <= x + w &&
+      mouseY >= y && mouseY <= y + h) {
+    delay(200);
+    onClick.run();
+  }
+}
+
+
+void iniciarComDificuldade(int nivel) {
+  dificuldade = nivel;
+  frameRate(nivel == 0 ? 5 : nivel == 1 ? 8 : 12); // fácil, normal, difícil
+  iniciarJogo();
+  jogoIniciado = true;
+  mostrarMenu = false;
+}
+
 void iniciarJogo() {
   snake = new Snake();
   spawnFood();
@@ -53,9 +114,7 @@ void spawnFood() {
 }
 
 void keyPressed() {
-  println("Tecla:", key); // Mostra a tecla pressionada no console
-
-  if (gameOver) return;
+  if (!jogoIniciado || gameOver) return;
 
   if ((key == 'w' || key == 'W') && snake.ydir != 1) {
     snake.setDir(0, -1);
@@ -68,18 +127,14 @@ void keyPressed() {
   }
 }
 
-
-
 void mousePressed() {
   if (gameOver) {
     if (mouseX >= buttonX && mouseX <= buttonX + buttonW &&
         mouseY >= buttonY && mouseY <= buttonY + buttonH) {
-      println("Botão clicado!");
       iniciarJogo();
     }
   }
 }
-
 
 void mostrarGameOver() {
   fill(255, 0, 0);
@@ -87,24 +142,18 @@ void mostrarGameOver() {
   textAlign(CENTER, CENTER);
   text("Game Over!", width / 2, height / 2 - 40);
 
-  // Posição do botão
+  // Desenhar botão de reiniciar
   buttonX = width / 2 - buttonW / 2;
   buttonY = height / 2;
-
-  // Desenhar botão verde com borda
-  stroke(255);
-  strokeWeight(2);
   fill(50, 200, 50);
   rect(buttonX, buttonY, buttonW, buttonH, 10);
-  noStroke();
 
-  // Texto do botão
   fill(255);
   textSize(20);
   text("Reiniciar", width / 2, buttonY + buttonH / 2);
 }
 
-
+// Classe Snake
 class Snake {
   ArrayList<PVector> body;
   int xdir = 1;
@@ -113,8 +162,8 @@ class Snake {
   Snake() {
     body = new ArrayList<PVector>();
     body.add(new PVector(floor(cols / 2), floor(rows / 2)));
-   xdir = 1;
-  ydir = 0; 
+    xdir = 1;
+    ydir = 0;
   }
 
   void setDir(int x, int y) {
@@ -128,15 +177,13 @@ class Snake {
   }
 
   void move() {
-  if (xdir == 0 && ydir == 0) return; // não se move se não tiver direção
-
-  PVector head = body.get(0).copy();
-  head.x += xdir;
-  head.y += ydir;
-  body.add(0, head);
-  body.remove(body.size() - 1);
-}
-
+    if (xdir == 0 && ydir == 0) return;
+    PVector head = body.get(0).copy();
+    head.x += xdir;
+    head.y += ydir;
+    body.add(0, head);
+    body.remove(body.size() - 1);
+  }
 
   void grow() {
     PVector head = body.get(0).copy();
@@ -178,6 +225,6 @@ class Snake {
 
   void encerrarJogo() {
     gameOver = true;
-    
+   
   }
 }
