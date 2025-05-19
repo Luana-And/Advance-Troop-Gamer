@@ -2,6 +2,7 @@ int cols = 40;
 int rows = 40;
 int cellSize = 20;
 int menuButtonX, menuButtonY,menuButtonW = 150, menuButtonH = 40;
+int pontos = 0;
 
 
 Snake snake;
@@ -36,6 +37,11 @@ void setup() {
 
 void draw() {
   background(0);
+  
+  fill(255);
+  textSize(16);
+  textAlign(LEFT, TOP);
+  text("Pontos: " + pontos, 10, 10);
 
   if (mostrarMenu) {
     mostrarTelaInicial();
@@ -54,6 +60,7 @@ void draw() {
 
     if (snake.head().equals(food)) {
       snake.grow();
+      pontos += 10;
       spawnFood();
     }
   } else {
@@ -105,6 +112,7 @@ void iniciarJogo() {
   snake = new Snake();
   spawnFood();
   gameOver = false;
+  pontos = 0;
   loop();
 }
 
