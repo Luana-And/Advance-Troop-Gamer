@@ -76,8 +76,11 @@ void button(String label, int x, int y, Runnable onClick) {
   int w = 150, h = 40;
   fill(50, 200, 50);
   rect(x, y, w, h, 10);
+
   fill(255);
-  text(label, x + w / 2, y + h / 2);
+  textSize(20);
+  textAlign(CENTER, CENTER);
+  text(label, x + w / 2, y + h / 2); // Centraliza o texto no botão
 
   if (mousePressed &&
       mouseX >= x && mouseX <= x + w &&
@@ -86,6 +89,7 @@ void button(String label, int x, int y, Runnable onClick) {
     onClick.run();
   }
 }
+
 
 void iniciarComDificuldade(int nivel) {
   dificuldade = nivel;
@@ -221,6 +225,6 @@ class Snake {
 
   void encerrarJogo() {
     gameOver = true;
-    
+   
   }
 }
