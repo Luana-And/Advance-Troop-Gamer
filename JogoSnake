@@ -1,19 +1,20 @@
 int cols = 40;
 int rows = 40;
 int cellSize = 20;
-int menuButtonX, menuButtonY,menuButtonW = 150, menuButtonH = 40;
+int menuButtonX, menuButtonY, menuButtonW = 150, menuButtonH = 40;
 int pontos = 0;
-
 
 Snake snake;
 PVector food;
-boolean gameOver = false;
+PVector comidaEspecial;
+boolean mostrarComidaEspecial = false;
+int tempoComidaEspecial = 0;
 
-// Estados do jogo
+ArrayList<PVector> obstaculos = new ArrayList<PVector>();
+boolean gameOver = false;
 boolean jogoIniciado = false;
 boolean mostrarMenu = true;
 
-// Texto da história
 String historia = 
   "Há muito tempo, em uma floresta mágica,\n" +
   "vive uma jovem cobra chamada Luma.\n" +
@@ -21,10 +22,8 @@ String historia =
   "e proteger a floresta das sombras que se aproximam.\n" +
   "Ajude Luma a crescer forte comendo o máximo que puder!";
 
-// Dificuldade
 int dificuldade = 1; // 0 = fácil, 1 = normal, 2 = difícil
 
-// Botão de reinício
 int buttonX, buttonY, buttonW = 150, buttonH = 40;
 
 void settings() {
@@ -55,14 +54,45 @@ void draw() {
     snake.checkCollision();
     snake.show();
 
+    // Comida normal
     fill(255, 0, 0);
     rect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
 
+    // Comida especial
+    if (mostrarComidaEspecial) {
+      fill(0, 100, 255);
+      rect(comidaEspecial.x * cellSize, comidaEspecial.y * cellSize, cellSize, cellSize);
+      tempoComidaEspecial--;
+      if (tempoComidaEspecial <= 0) {
+        mostrarComidaEspecial = false;
+      }
+    }
+
+    // Obstáculos
+    fill(150);
+    for (PVector o : obstaculos) {
+      rect(o.x * cellSize, o.y * cellSize, cellSize, cellSize);
+    }
+
+    // Comer comida normal
     if (snake.head().equals(food)) {
       snake.grow();
       pontos += 10;
       spawnFood();
     }
+
+    // Comer comida especial
+    if (mostrarComidaEspecial && snake.head().equals(comidaEspecial)) {
+      for (int i = 0; i < 3; i++) snake.grow();
+      pontos += 30;
+      mostrarComidaEspecial = false;
+    }
+
+    // Spawn comida especial de tempos em tempos
+    if (frameCount % 100 == 0 && !mostrarComidaEspecial) {
+      spawnComidaEspecial();
+    }
+
   } else {
     mostrarGameOver();
   }
@@ -74,7 +104,6 @@ void mostrarTelaInicial() {
   textSize(18);
   text(historia, width / 2, 80);
 
-  // Botões de dificuldade
   textSize(20);
   button("FÁCIL", width / 2 - 75, 200, () -> iniciarComDificuldade(0));
   button("NORMAL", width / 2 - 75, 260, () -> iniciarComDificuldade(1));
@@ -89,7 +118,7 @@ void button(String label, int x, int y, Runnable onClick) {
   fill(255);
   textSize(20);
   textAlign(CENTER, CENTER);
-  text(label, x + w / 2, y + h / 2); // Centraliza o texto no botão
+  text(label, x + w / 2, y + h / 2);
 
   if (mousePressed &&
       mouseX >= x && mouseX <= x + w &&
@@ -99,10 +128,9 @@ void button(String label, int x, int y, Runnable onClick) {
   }
 }
 
-
 void iniciarComDificuldade(int nivel) {
   dificuldade = nivel;
-  frameRate(nivel == 0 ? 5 : nivel == 1 ? 8 : 12); // fácil, normal, difícil
+  frameRate(nivel == 0 ? 5 : nivel == 1 ? 8 : 12);
   iniciarJogo();
   jogoIniciado = true;
   mostrarMenu = false;
@@ -111,15 +139,38 @@ void iniciarComDificuldade(int nivel) {
 void iniciarJogo() {
   snake = new Snake();
   spawnFood();
+  mostrarComidaEspecial = false;
+  tempoComidaEspecial = 0;
   gameOver = false;
   pontos = 0;
+  spawnObstaculos(dificuldade == 0 ? 3 : dificuldade == 1 ? 7 : 12);
   loop();
 }
 
 void spawnFood() {
   food = new PVector(floor(random(cols)), floor(random(rows)));
-  while (snake.contains(food)) {
+  while (snake.contains(food) || obstaculos.contains(food)) {
     food = new PVector(floor(random(cols)), floor(random(rows)));
+  }
+}
+
+void spawnComidaEspecial() {
+  comidaEspecial = new PVector(floor(random(cols)), floor(random(rows)));
+  while (snake.contains(comidaEspecial) || comidaEspecial.equals(food) || obstaculos.contains(comidaEspecial)) {
+    comidaEspecial = new PVector(floor(random(cols)), floor(random(rows)));
+  }
+  mostrarComidaEspecial = true;
+  tempoComidaEspecial = 80;
+}
+
+void spawnObstaculos(int quantidade) {
+  obstaculos.clear();
+  for (int i = 0; i < quantidade; i++) {
+    PVector o = new PVector(floor(random(cols)), floor(random(rows)));
+    while (snake.contains(o) || o.equals(food)) {
+      o = new PVector(floor(random(cols)), floor(random(rows)));
+    }
+    obstaculos.add(o);
   }
 }
 
@@ -142,11 +193,11 @@ void mousePressed() {
     if (mouseX >= buttonX && mouseX <= buttonX + buttonW &&
         mouseY >= buttonY && mouseY <= buttonY + buttonH) {
       iniciarJogo();
-        } else if (mouseX >= menuButtonX && mouseX <= menuButtonX + menuButtonW && 
-                   mouseY >= menuButtonY && mouseY <= menuButtonY + menuButtonH) {
-         gameOver = false;
-         jogoIniciado = false;
-         mostrarMenu = true;
+    } else if (mouseX >= menuButtonX && mouseX <= menuButtonX + menuButtonW && 
+               mouseY >= menuButtonY && mouseY <= menuButtonY + menuButtonH) {
+      gameOver = false;
+      jogoIniciado = false;
+      mostrarMenu = true;
     }
   }
 }
@@ -157,25 +208,20 @@ void mostrarGameOver() {
   textAlign(CENTER, CENTER);
   text("Game Over!", width / 2, height / 2 - 60);
 
-  // Desenhar botão de reiniciar
   buttonX = width / 2 - buttonW - 10;
   buttonY = height / 2;
   fill(50, 200, 50);
   rect(buttonX, buttonY, buttonW, buttonH, 10);
-
   fill(255);
   textSize(20);
   text("Reiniciar", buttonX + buttonW / 2, buttonY + buttonH / 2);
-  
-  
-  // Botao menu
+
   menuButtonX = width / 2 + 10;
   menuButtonY = buttonY;
   fill(50, 150, 200);
   rect(menuButtonX, menuButtonY, menuButtonW, menuButtonH, 10);
   fill(255);
   text("Menu", menuButtonX + menuButtonW / 2, menuButtonY + menuButtonH / 2);
-  
 }
 
 // Classe Snake
@@ -187,8 +233,6 @@ class Snake {
   Snake() {
     body = new ArrayList<PVector>();
     body.add(new PVector(floor(cols / 2), floor(rows / 2)));
-    xdir = 1;
-    ydir = 0;
   }
 
   void setDir(int x, int y) {
@@ -246,10 +290,15 @@ class Snake {
         encerrarJogo();
       }
     }
+
+    for (PVector o : obstaculos) {
+      if (head.equals(o)) {
+        encerrarJogo();
+      }
+    }
   }
 
   void encerrarJogo() {
     gameOver = true;
-   
   }
 }
