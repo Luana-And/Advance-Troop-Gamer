@@ -135,8 +135,8 @@ void drawMenu() {
 
 void keyPressed() {
   if (!inMenu && !gameOver) {
-    if (keyCode == LEFT) player.move(-1);
-    else if (keyCode == RIGHT) player.move(1);
+    if (key == 'a' || key == 'A') player.move(-1);
+    else if (key == 'd' || key == 'D') player.move(1);
     else if (key == ' ' && shootCooldown == 0) {
       playerBullets.add(new Bullet(player.x + 20, player.y, -7));
       shootCooldown = 20;
@@ -149,10 +149,11 @@ void keyPressed() {
 }
 
 void keyReleased() {
-  if (!inMenu && (keyCode == LEFT || keyCode == RIGHT)) {
+  if (!inMenu && (key == 'a' || key == 'A' || key == 'd' || key == 'D')) {
     player.move(0);
   }
 }
+
 
 void mousePressed() {
   if (inMenu) {
