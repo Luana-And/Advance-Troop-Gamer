@@ -3,7 +3,8 @@ ArrayList<Enemy> enemies;
 ArrayList<Bullet> playerBullets;
 ArrayList<Bullet> enemyBullets;
 
-PImage playerImg, enemyImg;
+PImage playerImg1, playerImg2, playerImg3;
+PImage enemyImg, bossImg;
 PFont font;
 
 int score = 0;
@@ -15,6 +16,11 @@ boolean inMenu = true;
 int spawnTimer = 0;
 float enemySpeed;
 float shootChance;
+
+// Boss
+Boss boss;
+boolean bossActive = false;
+boolean bossDefeated = false;
 
 // Botões de dificuldade
 Button btnEasy, btnNormal, btnHard;
@@ -30,13 +36,19 @@ void setup() {
   font = createFont("Arial", 16);
   textFont(font);
 
-playerImg = loadImage("player.png");
-enemyImg = loadImage("enemy.png");
+  playerImg1 = loadImage("player1.png");
+  playerImg2 = loadImage("player2.png");
+  playerImg3 = loadImage("player3.png");
 
-// Redimensionar para manter tamanho adequado no jogo
-playerImg.resize(100, 100);  // tamanho do jogador
-enemyImg.resize(90, 90);   // tamanho do inimigo
+  enemyImg = loadImage("enemy.png");
+  bossImg = loadImage("boss.png");
 
+  playerImg1.resize(50, 50);
+  playerImg2.resize(50, 50);
+  playerImg3.resize(50, 50);
+
+  enemyImg.resize(30, 30);
+  bossImg.resize(120, 120);
 
   btnEasy = new Button("Fácil", width / 2 - 100, 250, 200, 40, color(0, 200, 0));
   btnNormal = new Button("Normal", width / 2 - 100, 310, 200, 40, color(200, 200, 0));
@@ -57,14 +69,14 @@ void draw() {
     player.update();
     player.display();
 
-    // Spawn de inimigos
-    spawnTimer--;
-    if (spawnTimer <= 0) {
-      enemies.add(new Enemy(random(0, width - 30), -40, enemyImg, enemySpeed, shootChance));
-      spawnTimer = 60;
+    if (!bossActive) {
+      spawnTimer--;
+      if (spawnTimer <= 0) {
+        enemies.add(new Enemy(random(0, width - 30), -40, enemyImg, enemySpeed, shootChance));
+        spawnTimer = 60;
+      }
     }
 
-    // Player bullets
     for (int i = playerBullets.size() - 1; i >= 0; i--) {
       Bullet b = playerBullets.get(i);
       b.update();
@@ -75,12 +87,12 @@ void draw() {
           enemies.remove(j);
           playerBullets.remove(i);
           score += 10;
+          updatePlayerUpgrade();
           break;
         }
       }
     }
 
-    // Enemy bullets
     for (int i = enemyBullets.size() - 1; i >= 0; i--) {
       Bullet b = enemyBullets.get(i);
       b.update();
@@ -92,13 +104,36 @@ void draw() {
       }
     }
 
-    // Enemies
     for (int i = enemies.size() - 1; i >= 0; i--) {
       Enemy e = enemies.get(i);
       e.update();
       e.display();
       if (e.y > height) {
         gameOver = true;
+      }
+    }
+
+    if (!bossActive && !bossDefeated && score >= 200) {
+      boss = new Boss(width / 2 - 60, -120, bossImg);
+      bossActive = true;
+    }
+
+    if (bossActive) {
+      boss.update();
+      boss.display();
+
+      for (int i = playerBullets.size() - 1; i >= 0; i--) {
+        Bullet b = playerBullets.get(i);
+        if (b.hits(boss)) {
+          boss.health -= 10;
+          playerBullets.remove(i);
+          if (boss.health <= 0) {
+            bossDefeated = true;
+            bossActive = false;
+            score += 100;
+            updatePlayerUpgrade();
+          }
+        }
       }
     }
 
@@ -113,7 +148,6 @@ void draw() {
     fill(255);
     text("Pressione R para reiniciar", width / 2, height / 2 + 30);
 
-    // Botão de menu
     fill(50, 50, 200);
     rect(menuButtonX, menuButtonY, menuButtonW, menuButtonH, 10);
     fill(255);
@@ -126,7 +160,7 @@ void drawMenu() {
   textSize(32);
   fill(255);
   text("Escolha a Dificuldade", width / 2, 180);
-  
+
   btnEasy.display();
   btnNormal.display();
   btnHard.display();
@@ -143,7 +177,7 @@ void keyPressed() {
   }
 
   if (gameOver && (key == 'r' || key == 'R')) {
-    startGame(); // reinicia com mesma dificuldade
+    startGame();
   }
 }
 
@@ -152,7 +186,6 @@ void keyReleased() {
     player.move(0);
   }
 }
-
 
 void mousePressed() {
   if (inMenu) {
@@ -191,7 +224,7 @@ void setDifficulty(String level) {
 }
 
 void startGame() {
-  player = new Player(width / 2 - 20, height - 60, playerImg);
+  player = new Player(width / 2 - 20, height - 60, playerImg1);
   enemies = new ArrayList<Enemy>();
   playerBullets = new ArrayList<Bullet>();
   enemyBullets = new ArrayList<Bullet>();
@@ -200,9 +233,20 @@ void startGame() {
   shootCooldown = 0;
   gameOver = false;
   spawnTimer = 60;
+  bossActive = false;
+  bossDefeated = false;
 }
 
-// ----------------------- CLASSES -----------------------
+// Atualiza o upgrade da nave de acordo com a pontuação
+void updatePlayerUpgrade() {
+  if (score >= 150) {
+    player.setImage(playerImg3); // upgrade máximo
+  } else if (score >= 75) {
+    player.setImage(playerImg2); // upgrade médio
+  } else {
+    player.setImage(playerImg1); // básico
+  }
+}
 
 class Player {
   float x, y;
@@ -216,13 +260,17 @@ class Player {
     this.img = img;
   }
 
+  void setImage(PImage newImg) {
+    img = newImg;
+  }
+
   void move(int dir) {
     direction = dir;
   }
 
   void update() {
     x += direction * speed;
-    x = constrain(x, 0, width - 40);
+    x = constrain(x, 0, width - 50);
   }
 
   void display() {
@@ -275,11 +323,49 @@ class Bullet {
   }
 
   boolean hits(Player p) {
-    return x > p.x && x < p.x + 40 && y > p.y && y < p.y + 40;
+    return x > p.x && x < p.x + 50 && y > p.y && y < p.y + 50;
   }
 
   boolean hits(Enemy e) {
     return x > e.x && x < e.x + 30 && y > e.y && y < e.y + 30;
+  }
+
+  boolean hits(Boss b) {
+    return x > b.x && x < b.x + 120 && y > b.y && y < b.y + 120;
+  }
+}
+
+class Boss {
+  float x, y;
+  float speed = 1;
+  int health = 200;
+  PImage img;
+  int shootTimer = 0;
+
+  Boss(float x, float y, PImage img) {
+    this.x = x;
+    this.y = y;
+    this.img = img;
+  }
+
+  void update() {
+    if (y < 50) {
+      y += speed;
+    }
+    shootTimer++;
+    if (shootTimer >= 30) {
+      enemyBullets.add(new Bullet(x + 20, y + 60, 5));
+      enemyBullets.add(new Bullet(x + 80, y + 60, 5));
+      shootTimer = 0;
+    }
+  }
+
+  void display() {
+    image(img, x, y, 120, 120);
+    fill(255, 0, 0);
+    rect(x, y - 10, 120, 5);
+    fill(0, 255, 0);
+    rect(x, y - 10, map(health, 0, 200, 0, 120), 5);
   }
 }
 
