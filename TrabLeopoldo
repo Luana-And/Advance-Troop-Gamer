@@ -2,30 +2,40 @@ Player player;
 ArrayList<Enemy> enemies;
 ArrayList<Bullet> playerBullets;
 ArrayList<Bullet> enemyBullets;
+ArrayList<Item> items;
+ArrayList<Particle> particles;
+boolean shieldActive = false;
+int shieldTimer = 0;
 
 PImage playerImg1, playerImg2, playerImg3;
 PImage enemyImg, bossImg;
 PFont font;
 
+PImage bgImage;
+float bgY = 0;
+
 int score = 0;
+int highScore = 0;
 int lives = 3;
 int shootCooldown = 0;
 boolean gameOver = false;
 boolean inMenu = true;
-
 int spawnTimer = 0;
+
 float enemySpeed;
 float shootChance;
 
-// Boss
+int playerFirePower = 1;
+boolean speedBoost = false;
+int speedBoostTimer = 0;
+
+String scoreFile = "highscore.txt";
+
 Boss boss;
 boolean bossActive = false;
 boolean bossDefeated = false;
 
-// Botões de dificuldade
 Button btnEasy, btnNormal, btnHard;
-
-// Botão de menu no Game Over
 int menuButtonX = 300;
 int menuButtonY = 350;
 int menuButtonW = 200;
@@ -43,171 +53,258 @@ void setup() {
   enemyImg = loadImage("enemy.png");
   bossImg = loadImage("boss.png");
 
-  playerImg1.resize(50, 50);
-  playerImg2.resize(50, 50);
-  playerImg3.resize(50, 50);
-
-  enemyImg.resize(30, 30);
-  bossImg.resize(120, 120);
+  playerImg1.resize(70, 70);
+  playerImg2.resize(70, 70);
+  playerImg3.resize(70, 70);
+  enemyImg.resize(50, 50);
+  bossImg.resize(150, 150);
 
   btnEasy = new Button("Fácil", width / 2 - 100, 250, 200, 40, color(0, 200, 0));
   btnNormal = new Button("Normal", width / 2 - 100, 310, 200, 40, color(200, 200, 0));
   btnHard = new Button("Difícil", width / 2 - 100, 370, 200, 40, color(200, 0, 0));
+
+  String[] data = loadStrings(scoreFile);
+  if (data != null && data.length > 0) {
+    highScore = int(data[0]);
+  }
 }
 
 void draw() {
-  background(0);
+  // Fundo com rolagem
+  if (bgImage != null) {
+    image(bgImage, 0, bgY);
+    image(bgImage, 0, bgY - height);
+    bgY += 1;
+    if (bgY >= height) bgY = 0;
+  } else {
+    background(0);
+  }
+
   fill(255);
   textSize(16);
 
   if (inMenu) {
     drawMenu();
   } else if (!gameOver) {
-    text("Pontuação: " + score, 10, 20);
-    text("Vidas: " + lives, width - 100, 20);
-
-    player.update();
-    player.display();
-
-    if (!bossActive) {
-      spawnTimer--;
-      if (spawnTimer <= 0) {
-        enemies.add(new Enemy(random(0, width - 30), -40, enemyImg, enemySpeed, shootChance));
-        spawnTimer = 60;
-      }
-    }
-
-    for (int i = playerBullets.size() - 1; i >= 0; i--) {
-      Bullet b = playerBullets.get(i);
-      b.update();
-      b.display();
-      for (int j = enemies.size() - 1; j >= 0; j--) {
-        Enemy e = enemies.get(j);
-        if (b.hits(e)) {
-          enemies.remove(j);
-          playerBullets.remove(i);
-          score += 10;
-          updatePlayerUpgrade();
-          break;
-        }
-      }
-    }
-
-    for (int i = enemyBullets.size() - 1; i >= 0; i--) {
-      Bullet b = enemyBullets.get(i);
-      b.update();
-      b.display();
-      if (b.hits(player)) {
-        enemyBullets.remove(i);
-        lives--;
-        if (lives <= 0) gameOver = true;
-      }
-    }
-
-    for (int i = enemies.size() - 1; i >= 0; i--) {
-      Enemy e = enemies.get(i);
-      e.update();
-      e.display();
-      if (e.y > height) {
-        gameOver = true;
-      }
-    }
-
-    if (!bossActive && !bossDefeated && score >= 200) {
-      boss = new Boss(width / 2 - 60, -120, bossImg);
-      bossActive = true;
-    }
-
-    if (bossActive) {
-      boss.update();
-      boss.display();
-
-      for (int i = playerBullets.size() - 1; i >= 0; i--) {
-        Bullet b = playerBullets.get(i);
-        if (b.hits(boss)) {
-          boss.health -= 10;
-          playerBullets.remove(i);
-          if (boss.health <= 0) {
-            bossDefeated = true;
-            bossActive = false;
-            score += 100;
-            updatePlayerUpgrade();
-          }
-        }
-      }
-    }
-
-    shootCooldown = max(0, shootCooldown - 1);
+    drawGameplay();
   } else {
-    textAlign(CENTER);
-    textSize(32);
-    fill(255, 0, 0);
-    text("Game Over", width / 2, height / 2);
-
-    textSize(16);
-    fill(255);
-    text("Pressione R para reiniciar", width / 2, height / 2 + 30);
-
-    fill(50, 50, 200);
-    rect(menuButtonX, menuButtonY, menuButtonW, menuButtonH, 10);
-    fill(255);
-    text("Menu Principal", menuButtonX + menuButtonW / 2, menuButtonY + 25);
+    drawGameOverScreen();
   }
 }
+
+void drawGameplay() {
+  text("Pontuação: " + score, 10, 20);
+  text("Vidas: " + lives, width - 100, 20);
+  text("Recorde: " + highScore, width / 2 - 50, 20);
+  if (shieldActive) {
+  shieldTimer--;
+  if (shieldTimer <= 0) {
+    shieldActive = false;
+  }
+}
+
+
+  player.update();
+  player.display();
+
+  updateEnemies();
+  updateBullets();
+  updateItems();
+  updateParticles();
+  updateBoss();
+
+  if (speedBoost) {
+    speedBoostTimer--;
+    if (speedBoostTimer <= 0) speedBoost = false;
+  }
+
+  shootCooldown = max(0, shootCooldown - 1);
+}
+
+void updateEnemies() {
+  for (int i = enemies.size() - 1; i >= 0; i--) {
+    Enemy e = enemies.get(i);
+    e.update();
+    e.display();
+    if (e.y > height) {
+      gameOver = true;
+    }
+  }
+
+  // Spawn de inimigos enquanto o chefe não está ativo
+  if (!bossActive && !bossDefeated) {
+    spawnTimer--;
+    if (spawnTimer <= 0) {
+      float x = random(width - 50);
+      enemies.add(new Enemy(x, -50, enemyImg, enemySpeed, shootChance));
+      spawnTimer = 60;  // Ajuste o intervalo de spawn
+    }
+  }
+}
+void updateBullets() {
+  // Atualiza e exibe os tiros do jogador
+  for (int i = playerBullets.size() - 1; i >= 0; i--) {
+    Bullet b = playerBullets.get(i);
+    b.update();
+    b.display();
+
+    // Remove bala fora da tela
+    if (b.y < 0) {
+      playerBullets.remove(i);
+      continue;
+    }
+
+    // Checa colisão com inimigos
+boolean hitEnemy = false;
+for (int j = enemies.size() - 1; j >= 0; j--) {
+  Enemy e = enemies.get(j);
+  if (b.hits(e)) {
+    createExplosion(e.x + 25, e.y + 25);
+    enemies.remove(j);
+    playerBullets.remove(i);
+
+    // Chance de spawnar item
+   float rand = random(1);
+int itemType;
+if (rand < 0.3) itemType = 0;         // Azul - power
+else if (rand < 0.6) itemType = 1;    // Laranja - speed
+else if (rand < 0.85) itemType = 2;   // Ciano - shield
+else itemType = 3;                    // Nova - múltiplos tiros
+
+items.add(new Item(e.x + 25, e.y + 25, itemType));
+
+
+    score += 10;
+    hitEnemy = true;
+    break;
+  }
+}
+if (hitEnemy) continue;
+
+    if (hitEnemy) continue;
+
+    // Checa colisão com o chefe (boss)
+    if (bossActive && boss != null && b.hits(boss)) {
+      boss.health -= 5 * playerFirePower;
+      createExplosion(b.x, b.y);
+      playerBullets.remove(i);
+      if (boss.health <= 0) {
+        createExplosion(boss.x + 75, boss.y + 75);
+        bossActive = false;
+        bossDefeated = true;
+        score += 500;
+      }
+    }
+  }
+
+  // Atualiza e exibe os tiros dos inimigos
+  for (int i = enemyBullets.size() - 1; i >= 0; i--) {
+    Bullet b = enemyBullets.get(i);
+    b.update();
+    b.display();
+
+    // Remove bala fora da tela
+    if (b.y > height) {
+      enemyBullets.remove(i);
+      continue;
+    }
+
+    // Checa colisão com o jogador
+    if (b.hits(player)) {
+  enemyBullets.remove(i);
+  if (shieldActive) {
+    // Escudo bloqueia o tiro
+    shieldActive = false; // Desativa após um tiro
+  } else {
+    lives--;
+    createExplosion(player.x + 35, player.y + 35);
+    if (lives <= 0) {
+      gameOver = true;
+    }
+  }
+}
+  }
+}
+void updateItems() {
+  for (int i = items.size() - 1; i >= 0; i--) {
+    Item item = items.get(i);
+    item.update();
+    item.display();
+
+    if (item.collected(player)) {
+      if (item.type == 0) {
+        playerFirePower = min(playerFirePower + 1, 3);
+      } else if (item.type == 1) {
+        speedBoost = true;
+        speedBoostTimer = 300;
+      } else if (item.type == 2) {
+        shieldActive = true;
+        shieldTimer = 300; // 5 segundos
+      }
+      else if (item.type == 3) {
+  playerFirePower = min(playerFirePower + 1, 3); // Ou outro sistema se quiser separar do item azul
+}
+      items.remove(i);
+    } else if (item.y > height) {
+      items.remove(i);
+    }
+  }
+}
+
+void updateParticles() {
+  for (int i = particles.size() - 1; i >= 0; i--) {
+    Particle p = particles.get(i);
+    p.update();
+    p.display();
+    if (p.isDead()) {
+      particles.remove(i);
+    }
+  }
+}
+void updateBoss() {
+  if (score >= 300 && !bossActive && !bossDefeated) {
+    boss = new Boss(width / 2 - 75, -150, bossImg);
+    bossActive = true;
+  }
+
+  if (bossActive && boss != null) {
+    boss.update();
+    boss.display();
+  }
+}
+
 
 void drawMenu() {
   textAlign(CENTER);
   textSize(32);
   fill(255);
   text("Escolha a Dificuldade", width / 2, 180);
-
   btnEasy.display();
   btnNormal.display();
   btnHard.display();
 }
 
-void keyPressed() {
-  if (!inMenu && !gameOver) {
-    if (key == 'a' || key == 'A') player.move(-1);
-    else if (key == 'd' || key == 'D') player.move(1);
-    else if (key == ' ' && shootCooldown == 0) {
-      playerBullets.add(new Bullet(player.x + 20, player.y, -7));
-      shootCooldown = 20;
-    }
+void drawGameOverScreen() {
+  textAlign(CENTER);
+  textSize(32);
+  fill(255, 0, 0);
+  text("Game Over", width / 2, height / 2);
+
+  textSize(16);
+  fill(255);
+  text("Pressione R para reiniciar", width / 2, height / 2 + 30);
+
+  if (score > highScore) {
+    highScore = score;
+    saveStrings(scoreFile, new String[]{str(highScore)});
   }
 
-  if (gameOver && (key == 'r' || key == 'R')) {
-    startGame();
-  }
-}
+  text("Recorde: " + highScore, width / 2, height / 2 + 60);
 
-void keyReleased() {
-  if (!inMenu && (key == 'a' || key == 'A' || key == 'd' || key == 'D')) {
-    player.move(0);
-  }
-}
-
-void mousePressed() {
-  if (inMenu) {
-    if (btnEasy.isClicked(mouseX, mouseY)) {
-      setDifficulty("easy");
-      startGame();
-      inMenu = false;
-    } else if (btnNormal.isClicked(mouseX, mouseY)) {
-      setDifficulty("normal");
-      startGame();
-      inMenu = false;
-    } else if (btnHard.isClicked(mouseX, mouseY)) {
-      setDifficulty("hard");
-      startGame();
-      inMenu = false;
-    }
-  } else if (gameOver) {
-    if (mouseX >= menuButtonX && mouseX <= menuButtonX + menuButtonW &&
-        mouseY >= menuButtonY && mouseY <= menuButtonY + menuButtonH) {
-      inMenu = true;
-    }
-  }
+  fill(50, 50, 200);
+  rect(menuButtonX, menuButtonY, menuButtonW, menuButtonH, 10);
+  fill(255);
+  text("Menu Principal", menuButtonX + menuButtonW / 2, menuButtonY + 25);
 }
 
 void setDifficulty(String level) {
@@ -224,30 +321,34 @@ void setDifficulty(String level) {
 }
 
 void startGame() {
-  player = new Player(width / 2 - 20, height - 60, playerImg1);
+  player = new Player(width / 2 - 35, height - 80, playerImg1);
   enemies = new ArrayList<Enemy>();
   playerBullets = new ArrayList<Bullet>();
   enemyBullets = new ArrayList<Bullet>();
+  items = new ArrayList<Item>();
+  particles = new ArrayList<Particle>();
   lives = 3;
   score = 0;
   shootCooldown = 0;
-  gameOver = false;
+  playerFirePower = 1;
+  speedBoost = false;
   spawnTimer = 60;
+  gameOver = false;
   bossActive = false;
   bossDefeated = false;
 }
 
-// Atualiza o upgrade da nave de acordo com a pontuação
 void updatePlayerUpgrade() {
-  if (score >= 150) {
-    player.setImage(playerImg3); // upgrade máximo
-  } else if (score >= 75) {
-    player.setImage(playerImg2); // upgrade médio
-  } else {
-    player.setImage(playerImg1); // básico
-  }
+  if (score >= 150) player.setImage(playerImg3);
+  else if (score >= 75) player.setImage(playerImg2);
+  else player.setImage(playerImg1);
 }
 
+void createExplosion(float x, float y) {
+  for (int i = 0; i < 20; i++) {
+    particles.add(new Particle(x, y));
+  }
+}
 class Player {
   float x, y;
   float speed = 5;
@@ -269,12 +370,21 @@ class Player {
   }
 
   void update() {
-    x += direction * speed;
-    x = constrain(x, 0, width - 50);
+    float currentSpeed = speedBoost ? speed * 1.5 : speed;
+    x += direction * currentSpeed;
+    x = constrain(x, 0, width - 70);
   }
 
   void display() {
-    image(img, x, y, 50, 50);
+    image(img, x, y, 70, 70);
+  
+if (shieldActive) {
+  noFill();
+  stroke(0, 255, 255);
+  strokeWeight(3);
+  ellipse(x + 35, y + 35, 80, 80);
+  noStroke();
+}
   }
 }
 
@@ -295,15 +405,54 @@ class Enemy {
   void update() {
     y += speed;
     if (random(1) < shootChance) {
-      enemyBullets.add(new Bullet(x + 15, y + 30, 4));
+      enemyBullets.add(new Bullet(x + 25, y + 50, 4));
     }
   }
 
   void display() {
-    image(img, x, y, 30, 30);
+    image(img, x, y, 50, 50);
   }
 }
 
+class Boss {
+  float x, y;
+  float speed = 1;
+  int health = 200;
+  PImage img;
+  int shootTimer = 0;
+  boolean movingRight = true;
+
+  Boss(float x, float y, PImage img) {
+    this.x = x;
+    this.y = y;
+    this.img = img;
+  }
+
+  void update() {
+    if (y < 50) {
+      y += speed;
+    } else {
+      if (movingRight) x += 2;
+      else x -= 2;
+      if (x <= 0 || x + 150 >= width) movingRight = !movingRight;
+    }
+
+    shootTimer++;
+    if (shootTimer >= 30) {
+      enemyBullets.add(new Bullet(x + 30, y + 120, 5));
+      enemyBullets.add(new Bullet(x + 120, y + 120, 5));
+      shootTimer = 0;
+    }
+  }
+
+  void display() {
+    image(img, x, y, 150, 150);
+    fill(255, 0, 0);
+    rect(x, y - 10, 150, 5);
+    fill(0, 255, 0);
+    rect(x, y - 10, map(health, 0, 200, 0, 150), 5);
+  }
+}
 class Bullet {
   float x, y, speed;
 
@@ -323,51 +472,77 @@ class Bullet {
   }
 
   boolean hits(Player p) {
-    return x > p.x && x < p.x + 50 && y > p.y && y < p.y + 50;
+    return x > p.x && x < p.x + 70 && y > p.y && y < p.y + 70;
   }
 
   boolean hits(Enemy e) {
-    return x > e.x && x < e.x + 30 && y > e.y && y < e.y + 30;
+    return x > e.x && x < e.x + 50 && y > e.y && y < e.y + 50;
   }
 
   boolean hits(Boss b) {
-    return x > b.x && x < b.x + 120 && y > b.y && y < b.y + 120;
+    return x > b.x && x < b.x + 150 && y > b.y && y < b.y + 150;
   }
 }
 
-class Boss {
+class Item {
   float x, y;
-  float speed = 1;
-  int health = 200;
-  PImage img;
-  int shootTimer = 0;
+  int type; // 0 = aumento de tiro, 1 = velocidade
 
-  Boss(float x, float y, PImage img) {
+  Item(float x, float y, int type) {
     this.x = x;
     this.y = y;
-    this.img = img;
+    this.type = type;
   }
 
   void update() {
-    if (y < 50) {
-      y += speed;
-    }
-    shootTimer++;
-    if (shootTimer >= 30) {
-      enemyBullets.add(new Bullet(x + 20, y + 60, 5));
-      enemyBullets.add(new Bullet(x + 80, y + 60, 5));
-      shootTimer = 0;
-    }
+    y += 2;
+  }
+
+ void display() {
+  if (type == 0) fill(0, 150, 255);         // Power (azul-claro)
+  else if (type == 1) fill(255, 140, 0);    // Velocidade (laranja)
+  else if (type == 2) fill(0, 255, 255);    // Escudo (ciano)
+  else if (type == 3) fill(255, 50, 50);    // Multi-tiro (vermelho)
+
+  ellipse(x, y, 15, 15);
+
+}
+
+
+  boolean collected(Player p) {
+    return dist(x, y, p.x + 35, p.y + 35) < 30;
+  }
+}
+
+class Particle {
+  float x, y;
+  float dx, dy;
+  float lifespan = 255;
+
+  Particle(float x, float y) {
+    this.x = x;
+    this.y = y;
+    dx = random(-2, 2);
+    dy = random(-2, 2);
+  }
+
+  void update() {
+    x += dx;
+    y += dy;
+    lifespan -= 5;
   }
 
   void display() {
-    image(img, x, y, 120, 120);
-    fill(255, 0, 0);
-    rect(x, y - 10, 120, 5);
-    fill(0, 255, 0);
-    rect(x, y - 10, map(health, 0, 200, 0, 120), 5);
+    noStroke();
+    fill(255, lifespan);
+    ellipse(x, y, 5, 5);
+  }
+
+  boolean isDead() {
+    return lifespan <= 0;
   }
 }
+
 
 class Button {
   String label;
@@ -394,5 +569,59 @@ class Button {
 
   boolean isClicked(float mx, float my) {
     return mx >= x && mx <= x + w && my >= y && my <= y + h;
+  }
+}
+void mousePressed() {
+  if (inMenu) {
+    if (btnEasy.isClicked(mouseX, mouseY)) {
+      setDifficulty("easy");
+      startGame();
+      inMenu = false;
+    } else if (btnNormal.isClicked(mouseX, mouseY)) {
+      setDifficulty("normal");
+      startGame();
+      inMenu = false;
+    } else if (btnHard.isClicked(mouseX, mouseY)) {
+      setDifficulty("hard");
+      startGame();
+      inMenu = false;
+    }
+  } else if (gameOver) {
+    if (mouseX >= menuButtonX && mouseX <= menuButtonX + menuButtonW &&
+        mouseY >= menuButtonY && mouseY <= menuButtonY + menuButtonH) {
+      inMenu = true;
+    }
+  }
+}
+void keyPressed() {
+  if (!inMenu && !gameOver) {
+    if (key == 'a' || key == 'A') {
+      player.move(-1);
+    } else if (key == 'd' || key == 'D') {
+      player.move(1);
+    } else if (key == ' ' && shootCooldown == 0) {
+      if (playerFirePower == 1) {
+        playerBullets.add(new Bullet(player.x + 32, player.y, -7));
+      } else if (playerFirePower == 2) {
+        playerBullets.add(new Bullet(player.x + 20, player.y, -7));
+        playerBullets.add(new Bullet(player.x + 44, player.y, -7));
+      } else if (playerFirePower >= 3) {
+        playerBullets.add(new Bullet(player.x + 15, player.y, -7));
+        playerBullets.add(new Bullet(player.x + 32, player.y, -7));
+        playerBullets.add(new Bullet(player.x + 49, player.y, -7));
+      }
+      shootCooldown = 20;
+    }
+  }
+
+  if (gameOver && (key == 'r' || key == 'R')) {
+    startGame();
+  }
+}
+
+
+void keyReleased() {
+  if (!inMenu && (key == 'a' || key == 'A' || key == 'd' || key == 'D')) {
+    player.move(0);
   }
 }
