@@ -6,14 +6,11 @@ ArrayList<Item> items;
 ArrayList<Particle> particles;
 boolean shieldActive = false;
 int shieldTimer = 0;
-
 PImage playerImg1, playerImg2, playerImg3;
 PImage enemyImg, bossImg;
 PFont font;
-
 PImage bgImage;
 float bgY = 0;
-
 int score = 0;
 int highScore = 0;
 int lives = 3;
@@ -21,10 +18,8 @@ int shootCooldown = 0;
 boolean gameOver = false;
 boolean inMenu = true;
 int spawnTimer = 0;
-
 float enemySpeed;
 float shootChance;
-
 int playerFirePower = 1;
 boolean speedBoost = false;
 int speedBoostTimer = 0;
@@ -40,6 +35,41 @@ int menuButtonX = 300;
 int menuButtonY = 350;
 int menuButtonW = 200;
 int menuButtonH = 40;
+
+
+
+
+
+
+
+// Variáveis para controle da tela de história
+boolean mostrarHistoria = true;
+int paginaHistoria = 0;
+
+// Textos da história divididos em páginas
+String[] historia = {
+  "Ano 2587. A humanidade conquistou as estrelas.\nPor séculos, a paz reinou sob a federação galáctica.",
+  
+  "Mas uma ameaça surgiu das profundezas do universo...\nOs Kragons, uma raça de máquinas destruidoras,\ncomeçaram a dizimar planetas inteiros.",
+  
+  "Liderados pelo terrível Overlord Zarg,\neles consomem tudo em seu caminho,\nalimentando sua frota de guerra imbatível.",
+  
+  "As defesas da federação caíram.\nA esperança desaparece...\nMas uma última resistência surge...",
+  
+  "Você é um dos Galaxy Defenders,\no último piloto capaz de enfrentar essa ameaça.\nO destino da galáxia está em suas mãos.",
+  
+  "\"Quando a escuridão consome as estrelas...\nsó os Defensores da Galáxia podem reacender a esperança.\"\n\nPressione ESPAÇO para iniciar sua missão!"
+};
+
+
+
+
+
+
+
+
+
+
 
 void setup() {
   size(800, 600);
@@ -70,6 +100,13 @@ void setup() {
 }
 
 void draw() {
+  
+  
+   if (mostrarHistoria) {
+    mostrarTelaHistoria();
+  } else {
+  
+  
   // Fundo com rolagem
   if (bgImage != null) {
     image(bgImage, 0, bgY);
@@ -91,6 +128,38 @@ void draw() {
     drawGameOverScreen();
   }
 }
+}
+
+
+
+
+
+
+
+
+void mostrarTelaHistoria() {
+  background(0);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(24);
+  
+  textSize(18);
+  text(historia[paginaHistoria], width/2, height/2);
+  
+  textSize(14);
+  text("Pressione ESPAÇO para continuar...", width/2, height - 40);
+}
+
+
+
+
+
+
+
+
+
+
+
 
 void drawGameplay() {
   text("Pontuação: " + score, 10, 20);
@@ -594,6 +663,27 @@ void mousePressed() {
   }
 }
 void keyPressed() {
+  
+  
+  
+  
+    if (mostrarHistoria) {
+    if (key == ' ' || key == ' ') {
+      paginaHistoria++;
+      if (paginaHistoria >= historia.length) {
+        mostrarHistoria = false;  // Começa o jogo
+      }
+    }
+  } else {
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (!inMenu && !gameOver) {
     if (key == 'a' || key == 'A') {
       player.move(-1);
@@ -612,13 +702,14 @@ void keyPressed() {
       }
       shootCooldown = 20;
     }
+     
   }
 
   if (gameOver && (key == 'r' || key == 'R')) {
     startGame();
   }
 }
-
+}
 
 void keyReleased() {
   if (!inMenu && (key == 'a' || key == 'A' || key == 'd' || key == 'D')) {
