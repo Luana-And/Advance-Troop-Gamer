@@ -41,6 +41,15 @@ int menuButtonH = 40;
 
 
 
+boolean paused = false; // pausa
+
+
+
+
+
+
+
+
 
 // Variáveis para controle da tela de história
 boolean mostrarHistoria = true;
@@ -100,6 +109,21 @@ void setup() {
 }
 
 void draw() {
+  
+   if (paused) {// pausa
+    fill(255);// pausa
+    textAlign(CENTER, CENTER);// pausa
+    textSize(32);// pausa
+    text("Jogo Pausado", width/2, height/2);// pausa
+    return;// pausa
+  } // pausa
+  
+  
+  
+  
+  
+  
+  
   
   
    if (mostrarHistoria) {
@@ -663,6 +687,13 @@ void mousePressed() {
   }
 }
 void keyPressed() {
+  
+  
+  if (key == 'p' || key == 'P') { // pausa
+    paused = !paused; // pausa
+  } // pausa
+  
+  
   
   
   
