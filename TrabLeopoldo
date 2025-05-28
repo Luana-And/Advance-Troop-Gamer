@@ -35,17 +35,12 @@ int menuButtonX = 300;
 int menuButtonY = 350;
 int menuButtonW = 200;
 int menuButtonH = 40;
-
-
-
-
-
-
 boolean paused = false; // pausa
 
 
 
 
+boolean victory = false;
 
 
 
@@ -108,6 +103,21 @@ void setup() {
   }
 }
 
+
+
+
+void checarSalvarRecorde() {
+  if (score > highScore) {
+    highScore = score;
+    saveStrings(scoreFile, new String[]{str(highScore)});
+  }
+}
+
+
+
+
+
+
 void draw() {
   
    if (paused) {// pausa
@@ -144,13 +154,15 @@ void draw() {
   fill(255);
   textSize(16);
 
-  if (inMenu) {
+if (inMenu) {
     drawMenu();
-  } else if (!gameOver) {
+} else if (victory) {
+    drawVictoryScreen();
+} else if (!gameOver) {
     drawGameplay();
-  } else {
+} else {
     drawGameOverScreen();
-  }
+}
 }
 }
 
@@ -213,6 +225,12 @@ void drawGameplay() {
 
   shootCooldown = max(0, shootCooldown - 1);
 }
+
+
+
+
+
+
 
 void updateEnemies() {
   for (int i = enemies.size() - 1; i >= 0; i--) {
@@ -281,11 +299,16 @@ if (hitEnemy) continue;
       boss.health -= 5 * playerFirePower;
       createExplosion(b.x, b.y);
       playerBullets.remove(i);
-      if (boss.health <= 0) {
-        createExplosion(boss.x + 75, boss.y + 75);
-        bossActive = false;
-        bossDefeated = true;
-        score += 500;
+   if (boss.health <= 0) {
+  createExplosion(boss.x + 75, boss.y + 75);
+  bossActive = false;
+  bossDefeated = true;
+  score += 500;
+  victory = true;
+  checarSalvarRecorde();
+
+        
+        
       }
     }
   }
@@ -313,11 +336,44 @@ if (hitEnemy) continue;
     createExplosion(player.x + 35, player.y + 35);
     if (lives <= 0) {
       gameOver = true;
+        checarSalvarRecorde();
+
     }
   }
 }
   }
 }
+
+
+
+
+
+void drawVictoryScreen() {
+    background(0, 0, 50);
+    textAlign(CENTER, CENTER);
+    textSize(40);
+    fill(0, 255, 100);
+    text("Vitória!", width / 2, height / 2 - 60);
+
+    textSize(20);
+    fill(255);
+    text("Você salvou a galáxia dos Kragons!", width / 2, height / 2);
+
+    textSize(16);
+    text("Pontuação final: " + score, width / 2, height / 2 + 40);
+
+    fill(50, 50, 200);
+    rect(menuButtonX, menuButtonY, menuButtonW, menuButtonH, 10);
+    fill(255);
+    text("Menu Principal", menuButtonX + menuButtonW / 2, menuButtonY + 25);
+}
+
+
+
+
+
+
+
 void updateItems() {
   for (int i = items.size() - 1; i >= 0; i--) {
     Item item = items.get(i);
@@ -387,10 +443,8 @@ void drawGameOverScreen() {
   fill(255);
   text("Pressione R para reiniciar", width / 2, height / 2 + 30);
 
-  if (score > highScore) {
-    highScore = score;
-    saveStrings(scoreFile, new String[]{str(highScore)});
-  }
+
+
 
   text("Recorde: " + highScore, width / 2, height / 2 + 60);
 
@@ -414,6 +468,8 @@ void setDifficulty(String level) {
 }
 
 void startGame() {
+  victory = false;
+
   player = new Player(width / 2 - 35, height - 80, playerImg1);
   enemies = new ArrayList<Enemy>();
   playerBullets = new ArrayList<Bullet>();
@@ -679,12 +735,20 @@ void mousePressed() {
       startGame();
       inMenu = false;
     }
+  } else if (victory) {
+    if (mouseX >= menuButtonX && mouseX <= menuButtonX + menuButtonW &&
+        mouseY >= menuButtonY && mouseY <= menuButtonY + menuButtonH) {
+      inMenu = true;
+      victory = false;
+      // Se quiser, pode resetar outras variáveis aqui também
+    }
   } else if (gameOver) {
     if (mouseX >= menuButtonX && mouseX <= menuButtonX + menuButtonW &&
         mouseY >= menuButtonY && mouseY <= menuButtonY + menuButtonH) {
       inMenu = true;
     }
   }
+
 }
 void keyPressed() {
   
